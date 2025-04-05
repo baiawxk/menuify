@@ -1,34 +1,131 @@
-# cli-menu
+# menuify
 
-[![npm version][npm-version-src]][npm-version-href]
-[![npm downloads][npm-downloads-src]][npm-downloads-href]
-[![bundle][bundle-src]][bundle-href]
-[![JSDocs][jsdocs-src]][jsdocs-href]
-[![License][license-src]][license-href]
+一个简单的CLI菜单生成工具，帮助你快速创建交互式命令行菜单。
 
-_description_
+## 特性
 
-## Sponsors
+- 🚀 快速创建交互式CLI菜单
+- 📝 支持多种配置文件格式（TypeScript、JavaScript、JSON）
+- 🛠️ 支持执行命令和打开链接
+- ⚡ 轻量级，易于使用
 
-<p align="center">
-  <a href="https://cdn.jsdelivr.net/gh/baiawxk/static/sponsors.svg">
-    <img src='https://cdn.jsdelivr.net/gh/baiawxk/static/sponsors.svg'/>
-  </a>
-</p>
+## 安装
 
-## License
+```bash
+npm install menuify
+# 或者
+pnpm add menuify
+# 或者
+yarn add menuify
+```
 
-[MIT](./LICENSE) License © [baiawxk](https://github.com/baiawxk)
+## 使用方法
 
-<!-- Badges -->
+### 1. 创建配置文件
 
-[npm-version-src]: https://img.shields.io/npm/v/cli-menu?style=flat&colorA=080f12&colorB=1fa669
-[npm-version-href]: https://npmjs.com/package/cli-menu
-[npm-downloads-src]: https://img.shields.io/npm/dm/cli-menu?style=flat&colorA=080f12&colorB=1fa669
-[npm-downloads-href]: https://npmjs.com/package/cli-menu
-[bundle-src]: https://img.shields.io/bundlephobia/minzip/cli-menu?style=flat&colorA=080f12&colorB=1fa669&label=minzip
-[bundle-href]: https://bundlephobia.com/result?p=cli-menu
-[license-src]: https://img.shields.io/github/license/baiawxk/cli-menu.svg?style=flat&colorA=080f12&colorB=1fa669
-[license-href]: https://github.com/baiawxk/cli-menu/blob/main/LICENSE
-[jsdocs-src]: https://img.shields.io/badge/jsdocs-reference-080f12?style=flat&colorA=080f12&colorB=1fa669
-[jsdocs-href]: https://www.jsdocs.io/package/cli-menu
+在项目根目录创建 `cli.config.ts`（或 `.js`/`.json`）：
+
+```typescript
+import { defineMenu } from 'menuify'
+
+export default defineMenu({
+  menus: [
+    {
+      name: '打开项目主页',
+      type: 'link',
+      value: 'https://github.com/your-project'
+    },
+    {
+      name: '安装依赖',
+      type: 'command',
+      value: 'npm install',
+      options: {
+        cwd: './' // 可选，指定命令执行目录
+      }
+    },
+    {
+      name: '启动开发服务器',
+      type: 'command',
+      value: 'npm run dev'
+    }
+  ]
+})
+```
+
+### 2. 运行菜单
+
+```bash
+menuify
+```
+
+你也可以指定自定义配置文件：
+
+```bash
+menuify -f path/to/your/config.ts
+```
+
+## 配置选项
+
+### MenuOpts
+
+主配置选项接口：
+
+```typescript
+interface MenuOpts {
+  menus: MenuItem[]
+}
+```
+
+### MenuItem
+
+菜单项可以是以下两种类型之一：
+
+#### CommandMenu
+
+用于执行命令的菜单项：
+
+```typescript
+interface CommandMenu {
+  name: string // 显示名称
+  type: 'command' // 类型为command
+  value: string // 要执行的命令
+  options?: {
+    cwd?: string // 可选，指定命令执行目录
+  }
+}
+```
+
+#### LinkMenu
+
+用于打开链接的菜单项：
+
+```typescript
+interface LinkMenu {
+  name: string // 显示名称
+  type: 'link' // 类型为link
+  value: string // 要打开的URL
+}
+```
+
+## 功能特点
+
+- 支持命令执行：集成 `shelljs`，可以执行任何shell命令
+- 支持打开链接：集成 `open` 库，可以打开URL或文件
+- 智能配置加载：使用 `unconfig` 自动加载配置文件
+- 交互式搜索：支持菜单项快速搜索
+- 灵活的配置：支持TypeScript、JavaScript和JSON格式的配置文件
+
+## 命令行选项
+
+```bash
+Usage: menuify [options]
+
+Options:
+  -v, --version        显示版本号
+  -f, --file <file>    指定配置文件路径
+  -h, --help          显示帮助信息
+```
+
+## 许可证
+
+MIT

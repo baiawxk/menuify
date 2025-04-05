@@ -1,18 +1,18 @@
 {
-  "name": "cli-menu",
+  "name": "menuify",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "packageManager": "pnpm@10.6.2",
   "description": "_description_",
   "author": "baiawxk <baiawxk@qq.com>",
   "license": "MIT",
   "funding": "https://github.com/sponsors/baiawxk",
-  "homepage": "https://github.com/baiawxk/cli-menu#readme",
+  "homepage": "https://github.com/baiawxk/menuify#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/baiawxk/cli-menu.git"
+    "url": "git+https://github.com/baiawxk/menuify.git"
   },
-  "bugs": "https://github.com/baiawxk/cli-menu/issues",
+  "bugs": "https://github.com/baiawxk/menuify/issues",
   "keywords": [],
   "sideEffects": false,
   "exports": {
@@ -22,6 +22,9 @@
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
+  "bin": {
+    "menuify": "./dist/cli.mjs"
+  },
   "files": [
     "dist"
   ],
@@ -38,6 +41,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "catalog:",
+    "commander": "catalog:",
     "open": "catalog:",
     "shelljs": "catalog:",
     "unconfig": "catalog:"
