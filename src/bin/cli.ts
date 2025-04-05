@@ -1,4 +1,6 @@
-import type { MenuItem, MenuOpts } from '.'
+#!/usr/bin/env node
+
+import type { MenuItem, MenuOpts } from '..'
 import fs from 'node:fs'
 import { search } from '@inquirer/prompts'
 import { Command } from 'commander'
@@ -65,7 +67,7 @@ async function runConfig(file?: string): Promise<void> {
       open(value)
     }
     else if (type === 'command') {
-      if (menu.options) {
+      if (menu.options?.cwd) {
         sh.exec(value, { cwd: menu.options.cwd })
       }
       else {

@@ -23,7 +23,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "bin": {
-    "menuify": "./dist/cli.mjs"
+    "menuify": "./dist/bin/cli.cjs"
   },
   "files": [
     "dist"

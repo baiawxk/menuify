@@ -3,13 +3,11 @@ import { defineBuildConfig } from 'unbuild'
 export default defineBuildConfig({
   entries: [
     'src/index',
-    'src/cli',
+    'src/bin/cli',
   ],
-  declaration: 'node16',
+  declaration: true,
   clean: true,
   rollup: {
-    // inlineDependencies: [
-    //   '@antfu/utils',
-    // ],
+    emitCJS: true,
   },
 })
