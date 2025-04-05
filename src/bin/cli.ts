@@ -1,39 +1,32 @@
-#!/usr/bin/env node
-
 import type { MenuItem, MenuOpts } from '..'
 import fs from 'node:fs'
+import process from 'node:process'
 import { search } from '@inquirer/prompts'
-import { Command } from 'commander'
+import { cac } from 'cac'
 import open from 'open'
 import sh from 'shelljs'
 import { loadConfig } from 'unconfig'
 
-const PromptMsg = 'Select menu'
+const PromptMsg = 'Select a command to run'
 
 setupCli()
 
 function setupCli(): void {
-  const program = new Command()
-
-  program
-    .version('0.0.1')
-    .description('use defineMenu to create cli menu or use -f to load different configs')
-    .action(() => {
-      runConfig()
-    })
-
+  const program = cac()
   program
     .option('-f, --file <file>', 'config file path')
-    .action(async ({ file }) => {
-      runConfig(file)
-    })
+    .version('0.0.1')
+    .help()
 
-  program.parse()
+  const { options } = program.parse()
+  const { file } = options
+  runConfig(file)
 }
 
 async function runConfig(file?: string): Promise<void> {
   if (file && !fs.existsSync(file)) {
-    throw new Error(`config file ${file} not found`)
+    console.error(`config file ${file} not found`)
+    process.exit(1)
   }
   const { config } = await loadConfig<MenuOpts>({
     sources: file
