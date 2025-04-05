@@ -1,52 +1,72 @@
 import type { MenuItem, MenuOpts } from '.'
+import fs from 'node:fs'
 import { search } from '@inquirer/prompts'
+import { Command } from 'commander'
 import open from 'open'
 import sh from 'shelljs'
 import { loadConfig } from 'unconfig'
 
-const { config } = await loadConfig<MenuOpts>({
-  sources: [
-    // {
-    //   files: 'E:\\workspaces\\crawlee_study\\cli.config2.ts',
-    // },
-    {
-      files: 'cli.config',
-      extensions: ['ts', 'js', 'json'],
-    },
-  ],
-})
+const program = new Command()
 
-console.log({ config })
-// read menu items from config
-search({
-  message: 'Select menu',
-  source: (input) => {
-    const menus = config.menus.map((m) => {
-      const { name } = m
-      return {
-        name,
-        value: m,
+program
+  .version('0.0.1')
+  .description('use defineMenu to create cli menu or use -f to load different configs')
+  .action(() => {
+    runConfig()
+  })
+
+program
+  .option('-f, --file <file>', 'config file path')
+  .action(async ({ file }) => {
+    runConfig(file)
+  })
+
+program.parse()
+
+async function runConfig(file?: string): Promise<void> {
+  if (file && !fs.existsSync(file)) {
+    throw new Error(`config file ${file} not found`)
+  }
+  const { config } = await loadConfig<MenuOpts>({
+    sources: file
+      ? [{ files: file }]
+      : [{
+          files: 'cli.config',
+          extensions: ['ts', 'js', 'json'],
+        }],
+  })
+
+  console.log({ config })
+  // read menu items from config
+  search({
+    message: 'Select menu',
+    source: (input) => {
+      const menus = config.menus.map((m) => {
+        const { name } = m
+        return {
+          name,
+          value: m,
+        }
+      })
+      if (!input)
+        return menus
+      const choices = menus.filter((m) => {
+        return m.name.toLowerCase().includes(input.toLowerCase())
+      })
+      return choices
+    },
+  }).then(async (menu: MenuItem) => {
+    const { type, value } = menu
+    if (type === 'link') {
+      open(value)
+    }
+    else if (type === 'command') {
+      if (menu.options) {
+        sh.exec(value, { cwd: menu.options.cwd })
       }
-    })
-    if (!input)
-      return menus
-    const choices = menus.filter((m) => {
-      return m.name.toLowerCase().includes(input.toLowerCase())
-    })
-    return choices
-  },
-}).then(async (menu: MenuItem) => {
-  console.log({ menu })
-  const { type, value } = menu
-  if (type === 'link') {
-    open(value)
-  }
-  else if (type === 'command') {
-    if (menu.options) {
-      sh.exec(value, { cwd: menu.options.cwd })
+      else {
+        sh.exec(value)
+      }
     }
-    else {
-      sh.exec(value)
-    }
-  }
-})
+  })
+}
