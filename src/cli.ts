@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import type { MenuItem, MenuOpts } from '.'
 import fs from 'node:fs'
 import { search } from '@inquirer/prompts'
