@@ -6,22 +6,28 @@ import open from 'open'
 import sh from 'shelljs'
 import { loadConfig } from 'unconfig'
 
-const program = new Command()
+const PromptMsg = 'Select menu'
 
-program
-  .version('0.0.1')
-  .description('use defineMenu to create cli menu or use -f to load different configs')
-  .action(() => {
-    runConfig()
-  })
+setupCli()
 
-program
-  .option('-f, --file <file>', 'config file path')
-  .action(async ({ file }) => {
-    runConfig(file)
-  })
+function setupCli(): void {
+  const program = new Command()
 
-program.parse()
+  program
+    .version('0.0.1')
+    .description('use defineMenu to create cli menu or use -f to load different configs')
+    .action(() => {
+      runConfig()
+    })
+
+  program
+    .option('-f, --file <file>', 'config file path')
+    .action(async ({ file }) => {
+      runConfig(file)
+    })
+
+  program.parse()
+}
 
 async function runConfig(file?: string): Promise<void> {
   if (file && !fs.existsSync(file)) {
@@ -37,7 +43,7 @@ async function runConfig(file?: string): Promise<void> {
   })
 
   await search({
-    message: 'Select menu',
+    message: PromptMsg,
     source: (input) => {
       const menus = config.menus.map((m) => {
         const { name } = m
