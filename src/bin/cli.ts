@@ -5,8 +5,8 @@ import fs from 'node:fs'
 import process from 'node:process'
 import { search } from '@inquirer/prompts'
 import { cac } from 'cac'
+import { execa } from 'execa'
 import open from 'open'
-import sh from 'shelljs'
 import { loadConfig } from 'unconfig'
 
 const PromptMsg = 'Select a command to run'
@@ -63,10 +63,10 @@ async function runConfig(file?: string): Promise<void> {
     }
     else if (type === 'command') {
       if (menu.options?.cwd) {
-        sh.exec(value, { cwd: menu.options.cwd })
+        await execa(value, { stdio: 'inherit', cwd: menu.options.cwd })
       }
       else {
-        sh.exec(value)
+        await execa(value, { stdio: 'inherit' })
       }
     }
   })

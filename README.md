@@ -109,7 +109,7 @@ interface LinkMenu {
 
 ## 功能特点
 
-- 支持命令执行：集成 `shelljs`，可以执行任何shell命令
+- 支持命令执行：集成 `execa`，可以执行任何shell命令
 - 支持打开链接：集成 `open` 库，可以打开URL或文件
 - 智能配置加载：使用 `unconfig` 自动加载配置文件
 - 交互式搜索：支持菜单项快速搜索
