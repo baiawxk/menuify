@@ -36,9 +36,7 @@ async function runConfig(file?: string): Promise<void> {
         }],
   })
 
-  console.log({ config })
-  // read menu items from config
-  search({
+  await search({
     message: 'Select menu',
     source: (input) => {
       const menus = config.menus.map((m) => {
