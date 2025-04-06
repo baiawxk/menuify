@@ -24,6 +24,15 @@ function setupCli(): void {
   const { options } = program.parse()
   const { file } = options
   runConfig(file)
+  process.on('uncaughtException', (error) => {
+    if (error instanceof Error && error.name === 'ExitPromptError') {
+      // console.log('done')
+    }
+    else {
+      // Rethrow unknown errors
+      throw error
+    }
+  })
 }
 
 async function runConfig(file?: string): Promise<void> {
