@@ -21,7 +21,7 @@ setupCli()
 
 process.on('uncaughtException', (error) => {
   if (error instanceof Error && error.name === 'ExitPromptError') {
-    // console.log('done')
+    console.clear()
   }
   else {
     // Rethrow unknown errors
