@@ -34,7 +34,6 @@
     "lint": "eslint",
     "prepublishOnly": "nr build",
     "release": "bumpp && pnpm publish",
-    "publish": "pnpm publish",
     "link": "npm link",
     "start": "tsx src/bin/cli.ts",
     "test": "vitest",
