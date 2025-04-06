@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { defineBuildConfig } from 'unbuild'
 
 export default defineBuildConfig({
@@ -9,5 +10,11 @@ export default defineBuildConfig({
   clean: true,
   rollup: {
     emitCJS: true,
+  },
+  hooks: {
+    'build:done': () => {
+      fs.mkdirSync('./dist/tmpl', { recursive: true })
+      fs.copyFileSync('./src/tmpl/cli.config.ts', './dist/tmpl/cli.config.ts')
+    },
   },
 })

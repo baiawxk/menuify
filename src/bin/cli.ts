@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import type { MenuItem, MenuOpts } from '..'
 import fs from 'node:fs'
+import { resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { search } from '@inquirer/prompts'
 import { cac } from 'cac'
 import { execa } from 'execa'
@@ -10,6 +12,10 @@ import { loadConfig } from 'unconfig'
 
 const PROMPT_MSG = 'Select a command to run'
 const PAGE_SIZE = 20
+const cwd = process.cwd()
+const currentFile = fileURLToPath(import.meta.url)
+const tmplDir = resolve(currentFile, '../../tmpl')
+const configFileName = 'cli.config.ts'
 
 setupCli()
 
@@ -24,15 +30,26 @@ process.on('uncaughtException', (error) => {
 })
 
 function setupCli(): void {
-  const program = cac()
-  program
-    .option('-f, --file <file>', 'config file path')
+  const cli = cac()
+  cli
     .version('0.0.1')
     .help()
 
-  const { options } = program.parse()
-  const { file } = options
-  runConfig(file)
+  cli.command('', 'run config file')
+    .option('-f, --file <file>', 'config file')
+    .action(({ file }) => {
+      runConfig(file)
+    })
+
+  cli.command('init', 'init config file')
+    .action(() => {
+      const source = resolve(tmplDir, configFileName)
+      const target = resolve(cwd, configFileName)
+      fs.copyFileSync(source, target)
+      console.log(`Sample config created: ${target}`)
+    })
+
+  cli.parse()
 }
 
 async function runConfig(file?: string): Promise<void> {
