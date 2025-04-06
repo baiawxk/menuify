@@ -1,7 +1,7 @@
 {
   "name": "menuify",
   "type": "module",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "packageManager": "pnpm@10.7.1",
   "description": "_description_",
   "author": "baiawxk <baiawxk@qq.com>",
