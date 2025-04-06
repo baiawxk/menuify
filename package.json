@@ -38,8 +38,7 @@
     "link": "npm link",
     "start": "tsx src/bin/cli.ts",
     "test": "vitest",
-    "typecheck": "tsc --noEmit",
-    "prepare": "simple-git-hooks"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.4.1",
