@@ -9,7 +9,8 @@ import { execa } from 'execa'
 import open from 'open'
 import { loadConfig } from 'unconfig'
 
-const PromptMsg = 'Select a command to run'
+const PROMPT_MSG = 'Select a command to run'
+const PAGE_SIZE = 20
 
 setupCli()
 
@@ -40,15 +41,10 @@ async function runConfig(file?: string): Promise<void> {
   })
 
   await search({
-    message: PromptMsg,
+    pageSize: PAGE_SIZE,
+    message: PROMPT_MSG,
     source: (input) => {
-      const menus = config.menus.map((m) => {
-        const { name } = m
-        return {
-          name,
-          value: m,
-        }
-      })
+      const menus = getMenu(config)
       if (!input)
         return menus
       const choices = menus.filter((m) => {
@@ -68,6 +64,15 @@ async function runConfig(file?: string): Promise<void> {
       else {
         await execa(value, { stdio: 'inherit' })
       }
+    }
+  })
+}
+function getMenu(config: MenuOpts) {
+  return config.menus.map((m) => {
+    const { name } = m
+    return {
+      name,
+      value: m,
     }
   })
 }
