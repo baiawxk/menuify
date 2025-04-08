@@ -1,14 +1,6 @@
 export default {
   menus: [
     {
-      name: 'start n8n',
-      value: 'pnpx n8n',
-      type: 'command',
-      options: {
-        cwd: 'E:\\workspaces\\n8n',
-      },
-    },
-    {
       name: 'start crontab-ui',
       value: 'pnpx crontab-ui',
       type: 'command',
@@ -46,6 +38,11 @@ export default {
     {
       name: 'create svelte-app',
       value: 'npm create svelte@latest',
+      type: 'command',
+    },
+    {
+      name: 'create quasar-app',
+      value: 'pnpm create quasar',
       type: 'command',
     },
   ],
