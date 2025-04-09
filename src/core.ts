@@ -33,51 +33,21 @@ export interface LinkMenu extends BaseMenu {
 export type MenuItem = CommandMenu | LinkMenu
 
 export async function displayMenu(file?: string): Promise<void> {
-  if (file && !fs.existsSync(file)) {
-    console.error(`config file ${file} not found`)
-    process.exit(1)
-  }
-
-  const { config, sources } = await loadConfig<MenuOpts>({
-    sources: file
-      ? [{ files: file }]
-      : [{
-          files: 'cli.config',
-          extensions: ['ts', 'js', 'json'],
-        }],
-  })
+  const { config, sources } = await resolveConfig(file)
 
   if (sources && sources.length > 0) {
     console.log(`Config File: ${sources[0]}`)
   }
 
   if (!config) {
-    const confirmToCreate = await confirm({
-      message: `Seems no config file found in ${process.cwd()}, create one?`,
-    })
-
-    if (confirmToCreate) {
-      initConfig()
-      process.exit(0)
-    }
-    else {
-      process.exit(0)
-    }
+    await createSampleConfig()
   }
 
-  const menu = await search<MenuItem>({
-    message: 'Select a command to run',
-    source: (input) => {
-      const menus = getMenu(config)
-      if (!input)
-        return menus
-      const choices = menus.filter((m) => {
-        return m.name.toLowerCase().includes(input.toLowerCase())
-      })
-      return choices
-    },
-  })
+  const menu = await searchMenu(config)
 
+  await processMenu(menu)
+}
+async function processMenu(menu: MenuItem) {
   const { type, value } = menu
   if (type === 'link') {
     open(value)
@@ -91,6 +61,53 @@ export async function displayMenu(file?: string): Promise<void> {
     }
   }
 }
+
+async function searchMenu(config: MenuOpts) {
+  return await search<MenuItem>({
+    message: 'Select a command to run',
+    source: (input) => {
+      const menus = getMenu(config)
+      if (!input)
+        return menus
+      const choices = menus.filter((m) => {
+        return m.name.toLowerCase().includes(input.toLowerCase())
+      })
+      return choices
+    },
+  })
+}
+
+async function createSampleConfig() {
+  const confirmToCreate = await confirm({
+    message: `Seems no config file found in ${process.cwd()}, create one?`,
+  })
+
+  if (confirmToCreate) {
+    initConfig()
+    process.exit(0)
+  }
+  else {
+    process.exit(0)
+  }
+}
+
+async function resolveConfig(file: string | undefined) {
+  if (file && !fs.existsSync(file)) {
+    console.error(`config file ${file} not found`)
+    process.exit(1)
+  }
+
+  const result = await loadConfig<MenuOpts>({
+    sources: file
+      ? [{ files: file }]
+      : [{
+          files: 'cli.config',
+          extensions: ['ts', 'js', 'json'],
+        }],
+  })
+  return result
+}
+
 function getMenu(config: MenuOpts) {
   return config.menus.map((m) => {
     const { name } = m
