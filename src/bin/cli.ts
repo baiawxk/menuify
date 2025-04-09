@@ -2,7 +2,7 @@
 
 import process from 'node:process'
 import { cac } from 'cac'
-import { displayMenu, initConfig } from '..'
+import { displayMenu, initConfig } from '../core'
 
 setupCli()
 catchExitException()
