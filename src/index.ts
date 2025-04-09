@@ -38,7 +38,7 @@ export async function displayMenu(file?: string): Promise<void> {
     process.exit(1)
   }
 
-  const { config } = await loadConfig<MenuOpts>({
+  const { config, sources } = await loadConfig<MenuOpts>({
     sources: file
       ? [{ files: file }]
       : [{
@@ -46,6 +46,10 @@ export async function displayMenu(file?: string): Promise<void> {
           extensions: ['ts', 'js', 'json'],
         }],
   })
+
+  if (sources && sources.length > 0) {
+    console.log(`Config File: ${sources[0]}`)
+  }
 
   if (!config) {
     const confirmToCreate = await confirm({
@@ -100,10 +104,10 @@ function getMenu(config: MenuOpts) {
 export function initConfig() {
   const currentFolder = dirname(fileURLToPath(import.meta.url))
   const tmplDir = resolve(currentFolder, './tmpl')
-  const configFileName = 'cli.config.ts'
+  const configFileName = 'cli.config.json'
 
   const source = resolve(tmplDir, configFileName)
   const target = resolve(process.cwd(), configFileName)
   fs.copyFileSync(source, target)
-  console.log(`Sample config created: ${target}`)
+  console.log(`Sample Config Created: ${target}`)
 }

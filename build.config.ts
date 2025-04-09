@@ -14,7 +14,7 @@ export default defineBuildConfig({
   hooks: {
     'build:done': () => {
       fs.mkdirSync('./dist/tmpl', { recursive: true })
-      fs.copyFileSync('./src/tmpl/cli.config.ts', './dist/tmpl/cli.config.ts')
+      fs.copyFileSync('./src/tmpl/cli.config.json', './dist/tmpl/cli.config.json')
     },
   },
 })
