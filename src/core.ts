@@ -54,10 +54,10 @@ async function processMenu(menu: MenuItem) {
   }
   else if (type === 'command') {
     if (menu.options?.cwd) {
-      await execa(value, { stdio: 'inherit', cwd: menu.options.cwd })
+      await execa(value, { stdio: 'inherit', cwd: menu.options.cwd, shell: true })
     }
     else {
-      await execa(value, { stdio: 'inherit' })
+      await execa(value, { stdio: 'inherit', shell: true })
     }
   }
 }
