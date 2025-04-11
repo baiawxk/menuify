@@ -1,29 +1,32 @@
 # menuify
 
-一个简单的CLI菜单生成工具，帮助你快速创建交互式命令行菜单。
+A simple CLI menu generation tool to help you quickly create interactive command-line menus.
 
-## 特性
+## Features
 
-- 🚀 快速创建交互式CLI菜单
-- 📝 支持多种配置文件格式（TypeScript、JavaScript、JSON）
-- 🛠️ 支持执行命令和打开链接
-- ⚡ 轻量级，易于使用
+- 🚀 Quickly create interactive CLI menus
+- 📝 Supports multiple configuration file formats (TypeScript, JavaScript, JSON)
+- 🛠️ Execute commands and open links
+- 🎯 Interactive inputs and selections
+- ⏱️ Task scheduling and dependency management
+- ⚡ Lightweight and easy to use
+- 🎨 Displays a customizable banner and formatted menu groups
 
-## 安装
+## Installation
 
 ```bash
 npm install menuify
-# 或者
+# or
 pnpm add menuify
-# 或者
+# or
 yarn add menuify
 ```
 
-## 使用方法
+## Usage
 
-### 1. 创建配置文件
+### 1. Create a Configuration File
 
-在项目根目录创建 `cli.config.ts`（或 `.js`/`.json`）：
+Create a `cli.config.ts` (or `.js`/`.json`) file in the project root:
 
 ```typescript
 import { defineMenu } from 'menuify'
@@ -31,101 +34,162 @@ import { defineMenu } from 'menuify'
 export default defineMenu({
   menus: [
     {
-      name: '打开项目主页',
+      name: 'Build Project',
+      type: 'command',
+      value: 'npm run build ${env}',
+      inputs: [
+        {
+          id: 'env',
+          type: 'pickString',
+          description: 'Select build environment',
+          options: ['development', 'staging', 'production'],
+          default: 'development'
+        }
+      ]
+    },
+    {
+      name: 'Deploy Project',
+      type: 'command',
+      value: 'deploy.sh ${version}',
+      inputs: [
+        {
+          id: 'version',
+          type: 'promptString',
+          description: 'Enter version number',
+          default: '1.0.0'
+        }
+      ]
+    },
+    {
+      name: 'Open Documentation',
       type: 'link',
-      value: 'https://github.com/your-project'
+      value: 'https://example.com/docs'
     },
     {
-      name: '安装依赖',
-      type: 'command',
-      value: 'npm install',
-      options: {
-        cwd: './' // 可选，指定命令执行目录
-      }
-    },
-    {
-      name: '启动开发服务器',
-      type: 'command',
-      value: 'npm run dev'
+      name: 'Run Custom Function',
+      type: 'function',
+      value: async (inputs) => {
+        console.log('Custom function executed with inputs:', inputs)
+      },
+      inputs: [
+        {
+          id: 'input1',
+          type: 'promptString',
+          description: 'Enter a value for input1'
+        }
+      ]
     }
   ]
 })
 ```
 
-### 2. 运行菜单
+### 2. Run the Menu
 
 ```bash
 menuify
 ```
 
-你也可以指定自定义配置文件：
+You can also specify a custom configuration file:
 
 ```bash
 menuify -f path/to/your/config.ts
 ```
 
-## 配置选项
+## Configuration Options
 
 ### MenuOpts
 
-主配置选项接口：
+Main configuration options:
 
 ```typescript
 interface MenuOpts {
   menus: MenuItem[]
+  version?: string
 }
 ```
 
 ### MenuItem
 
-菜单项可以是以下两种类型之一：
+Menu item types:
 
 #### CommandMenu
 
-用于执行命令的菜单项：
+For executing commands:
 
 ```typescript
 interface CommandMenu {
-  name: string // 显示名称
-  type: 'command' // 类型为command
-  value: string // 要执行的命令
+  name: string // Display name
+  type: 'command' // Type is command
+  value: string // Command to execute
+  inputs?: TaskInput[] // Input configuration
   options?: {
-    cwd?: string // 可选，指定命令执行目录
+    cwd?: string // Optional, specify command execution directory
   }
 }
 ```
 
 #### LinkMenu
 
-用于打开链接的菜单项：
+For opening links:
 
 ```typescript
 interface LinkMenu {
-  name: string // 显示名称
-  type: 'link' // 类型为link
-  value: string // 要打开的URL
+  name: string // Display name
+  type: 'link' // Type is link
+  value: string // URL to open
 }
 ```
 
-## 功能特点
+#### FunctionMenu
 
-- 支持命令执行：集成 `execa`，可以执行任何shell命令
-- 支持打开链接：集成 `open` 库，可以打开URL或文件
-- 智能配置加载：使用 `unconfig` 自动加载配置文件
-- 交互式搜索：支持菜单项快速搜索
-- 灵活的配置：支持TypeScript、JavaScript和JSON格式的配置文件
+For executing custom functions:
 
-## 命令行选项
-
-```bash
-Usage: menuify [options]
-
-Options:
-  -v, --version        显示版本号
-  -f, --file <file>    指定配置文件路径
-  -h, --help          显示帮助信息
+```typescript
+interface FunctionMenu {
+  name: string // Display name
+  type: 'function' // Type is function
+  value: (inputs?: Record<string, string>) => Promise<void> // Function to execute
+  inputs?: TaskInput[] // Input configuration
+}
 ```
 
-## 许可证
+### TaskInput
+
+Task input configuration:
+
+```typescript
+interface TaskInput {
+  id: string // Input identifier
+  type: 'promptString' | 'pickString' | 'command' // Input type
+  description?: string // Input description
+  default?: string // Default value
+  options?: string[] // Options for pickString type
+  command?: string // Command for command type
+}
+```
+
+## Input Types
+
+### promptString
+Interactive prompt to get user input.
+
+### pickString
+Provide a list of options for the user to select.
+
+### command
+Get input value by executing a command.
+
+## Advanced Features
+
+### Task Dependencies
+Use `dependsOn` to specify task dependencies, supporting sequential and parallel execution.
+
+### Variable Replacement
+Use `${variableName}` syntax to reference input values in commands.
+
+### Custom Banner and Menu Groups
+Displays a customizable banner and formatted menu groups for better terminal output.
+
+## License
 
 MIT

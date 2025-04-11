@@ -3,9 +3,8 @@ import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { confirm, search } from '@inquirer/prompts'
-import { execa } from 'execa'
-import open from 'open'
 import { loadConfig } from 'unconfig'
+import { TaskRunner } from './taskRunner'
 
 export async function defineMenu(opts: MenuOpts): Promise<MenuOpts> {
   return opts
@@ -15,22 +14,46 @@ export interface MenuOpts {
   menus: MenuItem[]
 }
 
+export interface TaskInput {
+  id: string
+  type: 'promptString' | 'pickString' | 'confirm' | 'multiSelect'
+  description?: string
+  default?: string
+  options?: string[]
+  joinSymbol?: string
+}
+
 export interface BaseMenu {
   name: string
-  value: string
+  description?: string
   children?: MenuItem[]
+  group?: string
+  dependsOn?: string[]
+  inputs?: TaskInput[]
 }
 
 export interface CommandMenu extends BaseMenu {
   type: 'command'
-  options?: { cwd?: string }
+  value: string | string[]
+  runMode?: 'sequential' | 'parallel'
+  options?: {
+    cwd?: string
+  }
 }
 
 export interface LinkMenu extends BaseMenu {
   type: 'link'
+  value: string
 }
 
-export type MenuItem = CommandMenu | LinkMenu
+export interface FunctionMenu extends BaseMenu {
+  type: 'function'
+  value: (inputs?: Record<string, string>) => Promise<void>
+}
+
+export type MenuItem = CommandMenu | LinkMenu | FunctionMenu
+
+const taskRunner = new TaskRunner()
 
 export async function displayMenu(file?: string): Promise<void> {
   const { config, sources } = await resolveConfig(file)
@@ -41,30 +64,18 @@ export async function displayMenu(file?: string): Promise<void> {
 
   if (!config) {
     await createSampleConfig()
+    return
   }
 
+  taskRunner.setConfig(config)
   const menu = await searchMenu(config)
-
-  await processMenu(menu)
-}
-async function processMenu(menu: MenuItem) {
-  const { type, value } = menu
-  if (type === 'link') {
-    open(value)
-  }
-  else if (type === 'command') {
-    if (menu.options?.cwd) {
-      await execa(value, { stdio: 'inherit', cwd: menu.options.cwd, shell: true })
-    }
-    else {
-      await execa(value, { stdio: 'inherit', shell: true })
-    }
-  }
+  await taskRunner.processMenu(menu)
 }
 
 async function searchMenu(config: MenuOpts) {
   return await search<MenuItem>({
     message: 'Select a command to run',
+    pageSize: 15,
     source: (input) => {
       const menus = getMenu(config)
       if (!input)

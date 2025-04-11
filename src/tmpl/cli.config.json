@@ -1,49 +1,54 @@
 {
   "menus": [
     {
-      "name": "start crontab-ui",
-      "value": "pnpx crontab-ui",
-      "type": "command"
+      "name": "Start Development",
+      "type": "command",
+      "value": "npm run dev",
+      "group": "develop"
     },
     {
-      "name": "create vite-app",
-      "value": "npm create vite@latest",
-      "type": "command"
+      "name": "Build Project",
+      "type": "command",
+      "value": "npm run build",
+      "group": "build"
     },
     {
-      "name": "create vue-app",
-      "value": "npm create vue@latest",
-      "type": "command"
+      "name": "Test",
+      "type": "command",
+      "value": "npm test",
+      "group": "test"
     },
     {
-      "name": "create electron-app",
-      "value": "npm create electron-app@latest",
-      "type": "command"
+      "name": "Git Operations",
+      "type": "command",
+      "value": "${command}",
+      "group": "git",
+      "inputs": [
+        {
+          "id": "command",
+          "type": "pickString",
+          "description": "Select git operation",
+          "options": [
+            "git status",
+            "git add .",
+            "git commit -m \"${message}\"",
+            "git push",
+            "git pull"
+          ]
+        },
+        {
+          "id": "message",
+          "type": "promptString",
+          "description": "Enter commit message",
+          "default": "update"
+        }
+      ]
     },
     {
-      "name": "create nuxt-app",
-      "value": "npm create nuxt-app@latest",
-      "type": "command"
-    },
-    {
-      "name": "create react-app",
-      "value": "npm create react-app@latest",
-      "type": "command"
-    },
-    {
-      "name": "create next-app",
-      "value": "npm create next-app@latest",
-      "type": "command"
-    },
-    {
-      "name": "create svelte-app",
-      "value": "npm create svelte@latest",
-      "type": "command"
-    },
-    {
-      "name": "create quasar-app",
-      "value": "pnpm create quasar",
-      "type": "command"
+      "name": "Open Documentation",
+      "type": "link",
+      "value": "https://docs.example.com",
+      "group": "help"
     }
   ]
 }
