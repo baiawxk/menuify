@@ -1,9 +1,11 @@
-import type { ExecutionContext } from '../src/taskExecutor'
-import { beforeEach, describe, expect, it, vi, type MockedFunction } from 'vitest'
-import { execa, type ExecaMethod } from 'execa'
-import open from 'open'
-import { executeMenus } from '../src/taskExecutor'
+import type { ExecaMethod } from 'execa'
+import type { MockedFunction } from 'vitest'
 import type { CliConfig, MenuItem } from '../src/core'
+import type { ExecutionContext } from '../src/taskExecutor'
+import { execa } from 'execa'
+import open from 'open'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { executeMenus } from '../src/taskExecutor'
 
 // Mock dependencies
 vi.mock('execa', () => ({
@@ -15,7 +17,7 @@ vi.mock('open', () => ({
 }))
 
 describe('taskExecutor', () => {
-  let mockExeca: MockedFunction<ExecaMethod<{}>>
+  let mockExeca: MockedFunction<ExecaMethod>
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -118,14 +120,8 @@ describe('taskExecutor', () => {
 
       await executeMenus(menus, { taskRunMode: 'serial' })
 
-      expect(mockExeca).toHaveBeenNthCalledWith(1,
-        'echo "task1"',
-        expect.objectContaining({ shell: true, stdio: 'inherit' }),
-      )
-      expect(mockExeca).toHaveBeenNthCalledWith(2,
-        'echo "task2"',
-        expect.objectContaining({ shell: true, stdio: 'inherit' }),
-      )
+      expect(mockExeca).toHaveBeenNthCalledWith(1, 'echo "task1"', expect.objectContaining({ shell: true, stdio: 'inherit' }))
+      expect(mockExeca).toHaveBeenNthCalledWith(2, 'echo "task2"', expect.objectContaining({ shell: true, stdio: 'inherit' }))
     })
 
     it('should handle command error', async () => {
