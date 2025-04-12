@@ -16,7 +16,7 @@ describe('envResolver', () => {
       menuEnv: { test: 'value' },
     })
 
-    expect(resolver.resolve('test {test}')).toBe('test value')
+    expect(resolver.resolve('test %test%')).toBe('test value')
   })
 
   it('should give menu variables precedence over global variables', () => {
@@ -25,7 +25,7 @@ describe('envResolver', () => {
       menuEnv: { test: 'menu' },
     })
 
-    expect(resolver.resolve('%test% {test}')).toBe('global menu')
+    expect(resolver.resolve('%test% abc')).toBe('menu abc')
   })
 
   it('should resolve multiple occurrences of the same variable', () => {
@@ -42,7 +42,7 @@ describe('envResolver', () => {
       menuEnv: { menu: 'menu' },
     })
 
-    expect(resolver.resolve(['%test%', '{menu}'])).toEqual(['global', 'menu'])
+    expect(resolver.resolve(['%test%', '%menu%'])).toEqual(['global', 'menu'])
   })
 
   it('should create context with both global and menu environments', () => {
@@ -77,7 +77,7 @@ describe('envResolver', () => {
         inputs: { var: 'input' },
       })
 
-      expect(resolver.resolve('${var} {var} %var%')).toBe('input menu global')
+      expect(resolver.resolve('${var} %var%')).toBe('input menu')
     })
 
     it('should handle non-string input values', () => {
@@ -95,7 +95,10 @@ describe('envResolver', () => {
         globalEnv: { test: 'value' },
       })
 
-      expect(() => resolver.resolve('%missing%')).toThrow('Unresolved variables: missing')
+      expect(() => resolver.resolve('%missing%')).toThrowErrorMatchingInlineSnapshot(`
+        [Error: Failed to resolve variables: Unresolved variables found: missing
+        Make sure all required variables are defined in the appropriate scope.]
+      `)
     })
 
     it('should throw error for missing menu value', () => {
@@ -106,7 +109,7 @@ describe('envResolver', () => {
         task: undefined as any,
       }
 
-      expect(() => resolver.resolveMenu(menu)).toThrow('Menu test has no value')
+      expect(() => resolver.resolveMenu(menu)).toThrowErrorMatchingInlineSnapshot(`[Error: Menu "test" has no task defined]`)
     })
 
     it('should handle empty input values', () => {
@@ -156,7 +159,7 @@ describe('envResolver', () => {
       const menu: MenuItem = {
         name: 'test',
         type: 'command',
-        task: ['{prefix}1', '{prefix}2'],
+        task: ['%prefix%1', '%prefix%2'],
       }
 
       const resolved = resolver.resolveMenu(menu)
@@ -178,7 +181,7 @@ describe('envResolver', () => {
         menuEnv: { 'my-var': 'value' },
       })
 
-      expect(resolver.resolve('{my-var}')).toBe('value')
+      expect(resolver.resolve('%my-var%')).toBe('value')
     })
   })
 })

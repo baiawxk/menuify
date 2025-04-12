@@ -49,7 +49,7 @@ describe('TaskHandler', () => {
         type: 'command',
         task: [
           'echo %GLOBAL_VAR%',
-          'echo {MENU_VAR}',
+          'echo %MENU_VAR%',
         ],
       }
 
