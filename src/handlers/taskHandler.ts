@@ -11,17 +11,18 @@ export class TaskHandler {
     this.envResolver = new EnvResolver()
   }
 
-  /**
-   * Execute a menu item based on its type
-   */
   async executeMenuItem(menu: MenuItem, context: ExecutionContext): Promise<void> {
     if (context.debug)
       console.log(`[DEBUG] Executing menu item: ${menu.name} (${menu.type})`)
 
-    // Update env resolver with current context
-    this.envResolver.setGlobalEnv(context.env)
-    this.envResolver.setMenuEnv(context.menuEnv)
-    this.envResolver.setInputs(context.inputs || {})
+    // Initialize env resolver with current context and menu env
+    // Menu env should override global env
+    const menuEnv = { ...context.menuEnv, ...(menu.env || {}) }
+    this.envResolver = new EnvResolver({
+      globalEnv: context.env,
+      menuEnv,
+      inputs: context.inputs,
+    })
 
     try {
       switch (menu.type) {
@@ -52,7 +53,6 @@ export class TaskHandler {
     const commands = Array.isArray(command) ? command : [command]
 
     for (const cmd of commands) {
-      // First replace input variables, then environment variables
       const resolvedCmd = this.envResolver.resolve(cmd) as string
       if (context.debug)
         console.log(`[DEBUG] Executing command: ${resolvedCmd}`)
@@ -70,13 +70,16 @@ export class TaskHandler {
         await this.executeLink(u)
       return
     }
+
+    if (typeof url !== 'string')
+      throw new TypeError('Link URL must be a string')
     
     const resolvedUrl = this.envResolver.resolve(url) as string
     await open(resolvedUrl)
   }
 
-  private async executeFunction(func: any, context: ExecutionContext): Promise<void> {
-    if (typeof func !== 'function')
+  private async executeFunction(fn: unknown, context: ExecutionContext): Promise<void> {
+    if (typeof fn !== 'function')
       throw new TypeError('Task value must be a function for function type menu')
 
     const ctx = {
@@ -84,6 +87,7 @@ export class TaskHandler {
       menuEnv: { ...context.menuEnv },
       inputs: context.inputs ? { ...context.inputs } : undefined,
     }
-    await func(ctx)
+
+    await fn(ctx)
   }
 }

@@ -30,22 +30,22 @@ export interface BaseMenuItem {
   description?: string
 }
 
-export interface CommandMenuItem extends BaseMenuItem {
+export interface CommandMenu extends BaseMenuItem {
   type: 'command'
   task: string | string[]
 }
 
-export interface LinkMenuItem extends BaseMenuItem {
+export interface LinkMenu extends BaseMenuItem {
   type: 'link'
   task: string | string[]
 }
 
-export interface FunctionMenuItem extends BaseMenuItem {
+export interface FunctionMenu extends BaseMenuItem {
   type: 'function'
   task: (context: any) => Promise<void>
 }
 
-export type MenuItem = CommandMenuItem | LinkMenuItem | FunctionMenuItem
+export type MenuItem = CommandMenu | LinkMenu | FunctionMenu
 
 export interface ExecutionContext {
   env: Record<string, string>
@@ -67,15 +67,15 @@ export function defineMenu(config: CliConfig): CliConfig {
   return config
 }
 
-export function isCommandMenuItem(menu: MenuItem): menu is CommandMenuItem {
+export function isCommandMenuItem(menu: MenuItem): menu is CommandMenu {
   return menu.type === 'command'
 }
 
-export function isLinkMenuItem(menu: MenuItem): menu is LinkMenuItem {
+export function isLinkMenuItem(menu: MenuItem): menu is LinkMenu {
   return menu.type === 'link'
 }
 
-export function isFunctionMenuItem(menu: MenuItem): menu is FunctionMenuItem {
+export function isFunctionMenuItem(menu: MenuItem): menu is FunctionMenu {
   return menu.type === 'function'
 }
 

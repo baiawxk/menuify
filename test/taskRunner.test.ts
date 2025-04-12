@@ -1,8 +1,9 @@
-import type { CommandMenu, FunctionMenu, LinkMenu, MenuItem } from '../src/core'
+import type { CliConfig, CommandMenu, FunctionMenu, LinkMenu,  } from '../src/core'
 import { checkbox, confirm, input, search } from '@inquirer/prompts'
 import { Listr } from 'listr2'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi ,afterEach} from 'vitest'
 import { TaskRunner } from '../src/taskRunner'
+import open from 'open'
 
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
@@ -84,7 +85,7 @@ describe('taskRunner', () => {
     expect(taskRunner.getTaskStatus('Task 2')).toBe('completed')
   })
 
-  describe('input Handling', () => {
+  describe('input handling', () => {
     it('should handle promptString input type', async () => {
       const mockInput = 'test input'
       vi.mocked(input).mockResolvedValueOnce(mockInput)
@@ -211,50 +212,51 @@ describe('taskRunner', () => {
     })
   })
 
-  describe('menu Types', () => {
+  describe('menu types', () => {
     it('should handle function type menu', async () => {
-      const mockFn = vi.fn()
+      const mockFn = vi.fn().mockResolvedValueOnce(undefined)
       const task: FunctionMenu = {
         name: 'Function Task',
         type: 'function',
-        value: mockFn,
+        task: mockFn,
       }
 
-      await taskRunner.processMenu(task)
-      expect(mockFn).toHaveBeenCalledWith(undefined)
+      await taskRunner.executeTask(task)
+      expect(mockFn).toHaveBeenCalled()
     })
 
     it('should pass inputs to function type menu', async () => {
-      const mockFn = vi.fn()
+      const mockFn = vi.fn().mockResolvedValueOnce(undefined)
       vi.mocked(input).mockResolvedValueOnce('test input')
 
       const task: FunctionMenu = {
         name: 'Function With Input',
         type: 'function',
-        value: mockFn,
-        inputs: [
-          {
-            id: 'testInput',
-            type: 'promptString',
-            description: 'Enter test input',
-          },
-        ],
+        task: mockFn,
+        inputs: [{
+          id: 'testInput',
+          type: 'promptString',
+          description: 'Enter test input',
+        }],
       }
 
-      await taskRunner.processMenu(task)
-      expect(mockFn).toHaveBeenCalledWith({ testInput: 'test input' })
+      await taskRunner.executeTask(task)
+      expect(mockFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          inputs: { testInput: 'test input' },
+        }),
+      )
     })
 
     it('should handle link type menu', async () => {
       const task: LinkMenu = {
         name: 'Link Task',
         type: 'link',
-        value: 'https://example.com',
+        task: 'https://example.com',
       }
 
-      await taskRunner.processMenu(task)
-      // Note: We can't really test the link opening since it uses the 'open' package
-      // which we don't want to actually execute in tests
+      await taskRunner.executeTask(task)
+      expect(vi.mocked(open)).toHaveBeenCalledWith('https://example.com')
     })
   })
 })

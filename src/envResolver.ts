@@ -76,19 +76,19 @@ export class EnvResolver {
     if (typeof value !== 'string')
       throw new TypeError('Value must be a string')
 
-    // Skip resolution if no variables present
     if (!this.needsResolution(value))
       return value
 
     let result = value
 
-    // First replace input variables (${varName}) - highest priority
+    // Replace variables in order of precedence, with each type only accessing its own scope
+    // 1. Input variables (${var})
     result = this.replaceVariables(result, this.inputs, '${', '}')
 
-    // Then replace menu variables ({varName})
+    // 2. Menu variables ({var})
     result = this.replaceVariables(result, this.menuEnv, '{', '}')
 
-    // Finally replace global variables (%varname%) - lowest priority
+    // 3. Global variables (%var%)
     result = this.replaceVariables(result, this.globalEnv, '%', '%')
 
     // Check for any unresolved variables
