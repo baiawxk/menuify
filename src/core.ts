@@ -37,7 +37,7 @@ export interface MenuItem {
   dependsOn?: string[]
   confirmMsg?: string
   taskRunMode?: RunMode
-  tasks?: Array<() => Promise<void>>
+  runMode?:RunMode
   env?: Record<string, string> // Add menu-level environment variables
   description?: string
   group?: string
