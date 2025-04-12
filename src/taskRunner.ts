@@ -92,6 +92,21 @@ export class TaskRunner {
 
     try {
       this.logDebug(`Processing menu: ${menu.name}`)
+
+      // Add confirmation check
+      if (menu.confirmMsg) {
+        const confirmed = await this.inputHandler.processInput({
+          id: `confirm_${menu.name}`,
+          type: 'confirm',
+          description: menu.confirmMsg,
+        }, taskContext)
+
+        if (!confirmed) {
+          console.log(`Menu "${menu.name}" execution cancelled by user`)
+          return
+        }
+      }
+
       await this.processMenuInputs(menu, taskContext)
       await this.taskHandler.executeMenuItem(menu, taskContext)
       this.updateGlobalContext(taskContext)
