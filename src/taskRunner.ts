@@ -131,7 +131,7 @@ export class TaskRunner {
           menuEnv: this.context.menuEnv,
           inputs: this.context.inputs
         })
-        await menu.value({
+        await menu.task({
           env: this.context.env,
           menuEnv: this.context.menuEnv,
           inputs: this.context.inputs

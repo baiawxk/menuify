@@ -20,12 +20,12 @@ const mockConfig: MenuOpts = {
     {
       name: 'Test Command',
       type: 'command',
-      value: 'echo "test"',
+      task: 'echo "test"',
     },
     {
       name: 'Multiple Commands',
       type: 'command',
-      value: ['echo "one"', 'echo "two"'],
+      task: ['echo "one"', 'echo "two"'],
     },
   ],
 }

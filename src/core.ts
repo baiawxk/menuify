@@ -27,12 +27,12 @@ export type FunctionCtx = {
 }
 
 export type MenuType = 'command' | 'link' | 'function'
-export type MenuValue = string | string[] | ((inputs: FunctionCtx) => Promise<void>)
+export type TaskValue = string | string[] | ((inputs: FunctionCtx) => Promise<void>)
 
 export interface MenuItem {
   name: string
   type: MenuType
-  value: MenuValue
+  task: TaskValue
   inputs?: TaskInput[]
   dependsOn?: string[]
   confirmMsg?: string

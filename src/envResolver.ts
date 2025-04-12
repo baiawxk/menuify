@@ -1,4 +1,4 @@
-import type { MenuItem, MenuValue } from './core'
+import type { MenuItem, TaskValue } from './core'
 import type { ExecutionContext } from './taskExecutor'
 
 export interface EnvResolverOptions {
@@ -22,22 +22,22 @@ export class EnvResolver {
    * Resolves environment variables in a menu item's value
    */
   resolveMenu<T extends MenuItem>(menu: T): T {
-    if (menu.value === undefined) {
+    if (menu.task === undefined) {
       throw new Error(`Menu ${menu.name} has no value`)
     }
 
-    const resolvedValue = this.resolveValue(menu.value)
+    const resolvedValue = this.resolveValue(menu.task)
 
     return {
       ...menu,
-      value: resolvedValue,
+      task: resolvedValue,
     }
   }
 
   /**
    * Resolves a menu value which can be a string, string array, or function
    */
-  private resolveValue(value: MenuValue): MenuValue {
+  private resolveValue(value: TaskValue): TaskValue {
     if (typeof value === 'function') {
       return value
     }

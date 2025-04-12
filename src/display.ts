@@ -88,13 +88,13 @@ function formatMenuDescription(menu: MenuItem, options: DisplayOptions): string 
 
   // Otherwise show command value or link URL as fallback description
   if (menu.type === 'command') {
-    const value = Array.isArray(menu.value)
-      ? menu.value.join(' && ')
-      : menu.value as string
+    const value = Array.isArray(menu.task)
+      ? menu.task.join(' && ')
+      : menu.task as string
     return `$ ${value}`
   }
   else if (menu.type === 'link') {
-    return `🔗 ${menu.value}`
+    return `🔗 ${menu.task}`
   }
 
   return undefined

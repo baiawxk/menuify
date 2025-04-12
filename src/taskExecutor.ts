@@ -75,8 +75,8 @@ async function executeMenu(menu: MenuItem, options: TaskExecutorOptions): Promis
  */
 function convertMenuToTasks(menu: MenuItem, context: ExecutionContext): Array<() => Promise<void>> {
   if (menu.type === 'command') {
-    if (Array.isArray(menu.value)) {
-      return menu.value.map(cmd => async () => {
+    if (Array.isArray(menu.task)) {
+      return menu.task.map(cmd => async () => {
         const resolvedCmd = resolveVariables(cmd, context)
         if (context.debug) {
           console.log('[DEBUG] Command execution context:', {
@@ -90,7 +90,7 @@ function convertMenuToTasks(menu: MenuItem, context: ExecutionContext): Array<()
       })
     }
     return [async () => {
-      const resolvedCmd = resolveVariables(menu.value as string, context)
+      const resolvedCmd = resolveVariables(menu.task as string, context)
       if (context.debug) {
         console.log('[DEBUG] Command execution context:', {
           env: context.env,
@@ -103,15 +103,15 @@ function convertMenuToTasks(menu: MenuItem, context: ExecutionContext): Array<()
     }]
   }
   else if (menu.type === 'link') {
-    if (Array.isArray(menu.value)) {
-      return menu.value.map(link => async () => {
+    if (Array.isArray(menu.task)) {
+      return menu.task.map(link => async () => {
         const resolvedLink = resolveVariables(link, context)
         if (context.debug) console.log(`[DEBUG] Opening link: ${resolvedLink}`)
         await open(resolvedLink)
       })
     }
     return [async () => {
-      const resolvedLink = resolveVariables(menu.value as string, context)
+      const resolvedLink = resolveVariables(menu.task as string, context)
       if (context.debug) console.log(`[DEBUG] Opening link: ${resolvedLink}`)
       await open(resolvedLink)
     }]
@@ -124,7 +124,7 @@ function convertMenuToTasks(menu: MenuItem, context: ExecutionContext): Array<()
         inputs: context.inputs
       }
       if (context.debug) console.log('[DEBUG] Executing function with context:', ctx)
-      await menu.value(ctx)
+      await menu.task(ctx)
     }]
   }
 
@@ -173,12 +173,12 @@ function resolveVariables(value: string, context: ExecutionContext): string {
  */
 export async function executeMenuItem(menu: MenuItem, options: { envResolver?: any } = {}): Promise<void> {
   if (menu.type === 'command') {
-    const value = Array.isArray(menu.value) ? menu.value.join(' && ') : menu.value as string
+    const value = Array.isArray(menu.task) ? menu.task.join(' && ') : menu.task as string
     const command = options.envResolver ? options.envResolver.resolve(value) : value
      await execa(command, { stdio: 'inherit', shell: true })
   }
   else if (menu.type === 'link') {
-    const url = options.envResolver ? options.envResolver.resolve(menu.value as string) : menu.value as string
+    const url = options.envResolver ? options.envResolver.resolve(menu.task as string) : menu.task as string
     await open(url)
   }
   else {

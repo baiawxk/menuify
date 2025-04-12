@@ -15,19 +15,19 @@ describe('menu search', () => {
       {
         name: 'Build',
         type: 'command',
-        value: 'npm run build',
+        task: 'npm run build',
         description: 'Build the project',
       },
       {
         name: 'Test',
         type: 'command',
-        value: ['npm test', 'npm run coverage'],
+        task: ['npm test', 'npm run coverage'],
         description: 'Run tests with coverage',
       },
       {
         name: 'Docs',
         type: 'link',
-        value: 'https://example.com/docs',
+        task: 'https://example.com/docs',
         description: 'Open documentation',
       },
     ],
@@ -63,7 +63,7 @@ describe('menu search', () => {
     const menuWithoutDesc: MenuItem = {
       name: 'NoDesc',
       type: 'command',
-      value: 'echo test',
+      task: 'echo test',
     }
 
     vi.mocked(search).mockImplementationOnce(async (options) => {
@@ -80,7 +80,7 @@ describe('menu search', () => {
     const linkMenu: MenuItem = {
       name: 'NoDescLink',
       type: 'link',
-      value: 'https://example.com',
+      task: 'https://example.com',
     }
 
     vi.mocked(search).mockImplementationOnce(async (options) => {

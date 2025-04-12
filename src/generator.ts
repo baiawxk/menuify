@@ -118,7 +118,7 @@ do {
 
 function generateBashFunctions(menus: MenuItem[]): string {
   return menus.map((menu) => {
-    const commands = Array.isArray(menu.value) ? menu.value : [menu.value]
+    const commands = Array.isArray(menu.task) ? menu.task : [menu.task]
     return `
 function run_${sanitizeName(menu.name)}() {
   ${commands.map(cmd => `  ${cmd}`).join('\n')}
@@ -128,7 +128,7 @@ function run_${sanitizeName(menu.name)}() {
 
 function generateCmdFunctions(menus: MenuItem[]): string {
   return menus.map((menu) => {
-    const commands = Array.isArray(menu.value) ? menu.value : [menu.value]
+    const commands = Array.isArray(menu.task) ? menu.task : [menu.task]
     return `
 :${sanitizeName(menu.name)}
 ${commands.map(cmd => cmd).join('\n')}
@@ -138,7 +138,7 @@ goto menu`
 
 function generatePowershellFunctions(menus: MenuItem[]): string {
   return menus.map((menu) => {
-    const commands = Array.isArray(menu.value) ? menu.value : [menu.value]
+    const commands = Array.isArray(menu.task) ? menu.task : [menu.task]
     return `
 function Run-${sanitizeName(menu.name)} {
     ${commands.map(cmd => `    ${cmd}`).join('\n')}

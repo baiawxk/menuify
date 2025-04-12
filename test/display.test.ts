@@ -17,19 +17,19 @@ describe('display', () => {
       {
         name: 'Test Command',
         type: 'command',
-        value: 'echo "test"',
+        task: 'echo "test"',
         description: 'A test command',
       },
       {
         name: 'Test Function',
         type: 'function',
-        value: async () => {},
+        task: async () => {},
         dependsOn: ['Test Command'],
       },
       {
         name: 'Test Link',
         type: 'link',
-        value: 'https://example.com',
+        task: 'https://example.com',
       },
     ],
   }

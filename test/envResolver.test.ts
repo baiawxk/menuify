@@ -103,7 +103,7 @@ describe('envResolver', () => {
       const menu: MenuItem = {
         name: 'test',
         type: 'command',
-        value: undefined as any,
+        task: undefined as any,
       }
 
       expect(() => resolver.resolveMenu(menu)).toThrow('Menu test has no value')
@@ -125,11 +125,11 @@ describe('envResolver', () => {
       const menu: MenuItem = {
         name: 'test',
         type: 'function',
-        value: fn,
+        task: fn,
       }
 
       const resolved = resolver.resolveMenu(menu)
-      expect(resolved.value).toBe(fn)
+      expect(resolved.task).toBe(fn)
     })
 
     it('should resolve variables in command menu values', () => {
@@ -141,11 +141,11 @@ describe('envResolver', () => {
       const menu: MenuItem = {
         name: 'test',
         type: 'command',
-        value: '%cmd% ${arg}',
+        task: '%cmd% ${arg}',
       }
 
       const resolved = resolver.resolveMenu(menu)
-      expect(resolved.value).toBe('echo hello')
+      expect(resolved.task).toBe('echo hello')
     })
 
     it('should handle array of commands', () => {
@@ -156,11 +156,11 @@ describe('envResolver', () => {
       const menu: MenuItem = {
         name: 'test',
         type: 'command',
-        value: ['{prefix}1', '{prefix}2'],
+        task: ['{prefix}1', '{prefix}2'],
       }
 
       const resolved = resolver.resolveMenu(menu)
-      expect(resolved.value).toEqual(['cmd1', 'cmd2'])
+      expect(resolved.task).toEqual(['cmd1', 'cmd2'])
     })
   })
 
