@@ -1,7 +1,6 @@
 import type { Listr } from 'listr2'
 import type { InquirerContext } from './adapters/inquirerAdapter'
 import type { MenuItem } from './core'
-import { spawn } from 'node:child_process'
 import { execa } from 'execa'
 import open from 'open'
 import { InquirerAdapter } from './adapters/inquirerAdapter'
@@ -14,6 +13,7 @@ export interface ExecutionContext extends InquirerContext {
   menuEnv: Record<string, string>
   inputs?: Record<string, unknown>
   taskStatuses?: Map<string, string>
+  debug?: boolean // Add debug mode flag
 }
 
 export interface TaskExecutorOptions {
@@ -50,22 +50,6 @@ async function executeMenu(menu: MenuItem, options: TaskExecutorOptions): Promis
   context.taskStatuses.set(menu.name, 'running')
 
   try {
-    // Process inputs if available
-    if (menu.inputs?.length) {
-      const adapter = InquirerAdapter.createRenderer([], {})
-      context.inputs = {}
-      for (const input of menu.inputs) {
-        const value = await adapter.processInput(input)
-        if (value !== undefined) {
-          context.inputs[input.id] = value
-        }
-      }
-      // If no inputs were collected, set inputs back to undefined
-      if (Object.keys(context.inputs).length === 0) {
-        context.inputs = undefined
-      }
-    }
-
     // Convert menu to tasks
     const tasks = convertMenuToTasks(menu, context)
 
@@ -94,29 +78,53 @@ function convertMenuToTasks(menu: MenuItem, context: ExecutionContext): Array<()
     if (Array.isArray(menu.value)) {
       return menu.value.map(cmd => async () => {
         const resolvedCmd = resolveVariables(cmd, context)
-        await execa(resolvedCmd, { shell: true })
+        if (context.debug) {
+          console.log('[DEBUG] Command execution context:', {
+            env: context.env,
+            menuEnv: context.menuEnv,
+            inputs: context.inputs
+          })
+          console.log(`[DEBUG] Executing command: ${resolvedCmd}`)
+        }
+        await execa(resolvedCmd, { shell: true, stdio: 'inherit' })
       })
     }
     return [async () => {
       const resolvedCmd = resolveVariables(menu.value as string, context)
-      await execa(resolvedCmd, { shell: true })
+      if (context.debug) {
+        console.log('[DEBUG] Command execution context:', {
+          env: context.env,
+          menuEnv: context.menuEnv,
+          inputs: context.inputs
+        })
+        console.log(`[DEBUG] Executing command: ${resolvedCmd}`)
+      }
+      await execa(resolvedCmd, { shell: true, stdio: 'inherit' })
     }]
   }
   else if (menu.type === 'link') {
     if (Array.isArray(menu.value)) {
       return menu.value.map(link => async () => {
         const resolvedLink = resolveVariables(link, context)
+        if (context.debug) console.log(`[DEBUG] Opening link: ${resolvedLink}`)
         await open(resolvedLink)
       })
     }
     return [async () => {
       const resolvedLink = resolveVariables(menu.value as string, context)
+      if (context.debug) console.log(`[DEBUG] Opening link: ${resolvedLink}`)
       await open(resolvedLink)
     }]
   }
   else if (menu.type === 'function') {
     return [async () => {
-      await menu.value({ ...context })
+      const ctx = {
+        env: context.env,
+        menuEnv: context.menuEnv,
+        inputs: context.inputs
+      }
+      if (context.debug) console.log('[DEBUG] Executing function with context:', ctx)
+      await menu.value(ctx)
     }]
   }
 
@@ -160,21 +168,13 @@ function resolveVariables(value: string, context: ExecutionContext): string {
 }
 
 /**
- * Execute a single menu item
+ * Execute a single menu item directly
  */
-export async function executeTask(menu: MenuItem, options: { envResolver?: any } = {}): Promise<void> {
+export async function executeMenuItem(menu: MenuItem, options: { envResolver?: any } = {}): Promise<void> {
   if (menu.type === 'command') {
     const value = Array.isArray(menu.value) ? menu.value.join(' && ') : menu.value as string
     const command = options.envResolver ? options.envResolver.resolve(value) : value
-    const child = spawn(command, { stdio: 'inherit', shell: true })
-    return new Promise((resolve, reject) => {
-      child.on('error', reject)
-      child.on('close', (code) => {
-        if (code === 0)
-          resolve()
-        else reject(new Error(`Command failed with exit code ${code}`))
-      })
-    })
+    return await execa(command, { stdio: 'inherit', shell: true })
   }
   else if (menu.type === 'link') {
     const url = options.envResolver ? options.envResolver.resolve(menu.value as string) : menu.value as string

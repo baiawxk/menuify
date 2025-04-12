@@ -18,13 +18,14 @@ export class TaskRunner {
     this.menuConfig = config || {}
     this.inquirerAdapter = InquirerAdapter.createRenderer([])
     this.context = {
-      env: {},
+      env: config?.env || {},  // Initialize with global env
       menuEnv: {},
       inputs: undefined,
       taskStatuses: new Map(),
+      debug: true
     }
-    // Initialize with empty array to allow executing individual tasks
     this.dependencyResolver = new DependencyResolver([])
+    if (this.context.debug) console.log('[DEBUG] TaskRunner initialized with global env:', this.context.env)
   }
 
   /**
@@ -46,8 +47,13 @@ export class TaskRunner {
    */
   async executeTask(task: MenuItem): Promise<void> {
     try {
+      if (this.context.debug)
+        console.log(`[DEBUG] Executing task: ${task.name}`)
+
       // Handle dependencies first
       if (task.dependsOn?.length) {
+        if (this.context.debug)
+          console.log(`[DEBUG] Task ${task.name} has dependencies: ${task.dependsOn.join(', ')}`)
         for (const depName of task.dependsOn) {
           const depTask = await this.findTaskByName(depName)
           if (!depTask) {
@@ -62,17 +68,8 @@ export class TaskRunner {
 
       // Mark task as running
       this.context.taskStatuses?.set(task.name, 'running')
-
-      // Process inputs if available
-      if (task.inputs?.length) {
-        this.context.inputs = {}
-        for (const input of task.inputs) {
-          const value = await this.inquirerAdapter.processInput(input)
-          if (value !== undefined) {
-            this.context.inputs[input.id] = value
-          }
-        }
-      }
+      if (this.context.debug)
+        console.log(`[DEBUG] Task ${task.name} status set to running`)
 
       // Execute the task
       await executeMenus([task], {
@@ -82,9 +79,13 @@ export class TaskRunner {
 
       // Mark task as completed
       this.context.taskStatuses?.set(task.name, 'completed')
+      if (this.context.debug)
+        console.log(`[DEBUG] Task ${task.name} completed successfully`)
     }
     catch (error) {
       this.context.taskStatuses?.set(task.name, 'failed')
+      if (this.context.debug)
+        console.log(`[DEBUG] Task ${task.name} failed:`, error)
       throw error
     }
   }
@@ -93,31 +94,57 @@ export class TaskRunner {
    * Process a menu item
    */
   async processMenu(menu: MenuItem): Promise<void> {
-    // Reset inputs for each menu execution
-    this.context.inputs = undefined
+    try {
+      if (this.context.debug) console.log(`[DEBUG] Processing menu: ${menu.name}`)
+      
+      // Set menu-level environment variables
+      this.context.menuEnv = menu.env || {}
+      if (this.context.debug) {
+        console.log('[DEBUG] Menu environment:', this.context.menuEnv)
+        console.log('[DEBUG] Global environment:', this.context.env)
+      }
 
-    // Process inputs if available
-    if (menu.inputs?.length) {
-      const inputs: Record<string, unknown> = {}
-      for (const input of menu.inputs) {
-        const value = await this.inquirerAdapter.processInput(input)
-        if (value !== undefined) {
-          inputs[input.id] = value
+      // Process inputs if available
+      if (menu.inputs?.length) {
+        if (this.context.debug) console.log(`[DEBUG] Processing inputs for menu ${menu.name}`)
+        this.context.inputs = {}
+        for (const input of menu.inputs) {
+          const value = await this.inquirerAdapter.processInput(input)
+          if (value !== undefined) {
+            this.context.inputs[input.id] = value
+            if (this.context.debug) console.log(`[DEBUG] Input ${input.id} set to:`, value)
+          }
+        }
+        // If no inputs were collected, set inputs back to undefined
+        if (Object.keys(this.context.inputs).length === 0) {
+          this.context.inputs = undefined
+          if (this.context.debug) console.log(`[DEBUG] No inputs collected, setting inputs to undefined`)
         }
       }
-      // Only set inputs if we collected any values
-      if (Object.keys(inputs).length > 0) {
-        this.context.inputs = inputs
+
+      // Execute based on menu type
+      if (menu.type === 'function') {
+        if (this.context.debug) console.log(`[DEBUG] Executing function type menu with context:`, {
+          env: this.context.env,
+          menuEnv: this.context.menuEnv,
+          inputs: this.context.inputs
+        })
+        await menu.value({
+          env: this.context.env,
+          menuEnv: this.context.menuEnv,
+          inputs: this.context.inputs
+        })
+      }
+      else {
+        if (this.context.debug) console.log(`[DEBUG] Executing ${menu.type} type menu`)
+        await this.executeTask(menu)
       }
     }
-
-    // Execute based on menu type
-    if (menu.type === 'function') {
-      // For function type, only pass the inputs
-      await menu.value(this.context.inputs)
-    }
-    else {
-      await this.executeTask(menu)
+    finally {
+      // Clear inputs and menu environment after execution
+      this.context.inputs = undefined
+      this.context.menuEnv = {}
+      if (this.context.debug) console.log(`[DEBUG] Menu execution completed, inputs and menu env cleared`)
     }
   }
 
@@ -141,12 +168,21 @@ export class TaskRunner {
       task: async () => {
         await task()
       },
+      options: {
+        persistentOutput: true,
+        bottomBar: Infinity,
+      },
     }))
 
     return new Listr(taskWrappers, {
       concurrent: menu.taskRunMode === 'parallel',
       exitOnError: false,
       renderer: InquirerAdapter,
+      rendererOptions: {
+        showSubtasks: true,
+        collapse: false,
+        clearOutput: false,
+      },
     })
   }
 

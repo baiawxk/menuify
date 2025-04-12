@@ -33,11 +33,17 @@ export interface MenuItem {
   confirmMsg?: string
   taskRunMode?: TaskRunMode
   tasks?: Array<() => Promise<void>>
+  env?: Record<string, string> // Add menu-level environment variables
+  description?: string
+  group?: string
+  options?: {
+    cwd?: string
+  }
 }
 
 export interface MenuOpts {
   menus?: MenuItem[]
-  env?: EnvResolverOptions
+  env?: Record<string, string> // Global environment variables
 }
 
 export async function defineMenu(opts: MenuOpts): Promise<MenuOpts> {
