@@ -259,105 +259,67 @@ describe('taskRunner', () => {
   })
 })
 
-// describe('taskRunner', () => {
-//   beforeEach(() => {
-//     vi.clearAllMocks()
-//   })
+describe('debug configuration', () => {
+  let consoleSpy: jest.SpyInstance
 
-//   it('should create a task list with correct configuration', () => {
-//     const menu: MenuItem = {
-//       name: 'test',
-//       type: 'command',
-//       value: 'test command',
-//       taskRunMode: 'serial',
-//     }
+  beforeEach(() => {
+    consoleSpy = vi.spyOn(console, 'log')
+  })
 
-//     const tasks = [
-//       async () => { /* task1 */ },
-//       async () => { /* task2 */ },
-//     ]
+  afterEach(() => {
+    consoleSpy.mockRestore()
+  })
 
-//     const context = { env: {}, menuEnv: {} }
-//     const taskList = TaskRunner.createTaskList(menu, tasks, context)
+  it('should enable debug logging when debug is true in config', async () => {
+    const config: CliConfig = {
+      debug: true,
+      menus: [{
+        name: 'Test Task',
+        type: 'command',
+        task: 'echo "test"'
+      }]
+    }
 
-//     expect(taskList).toBeDefined()
-//     expect(Listr).toHaveBeenCalledWith(
-//       expect.arrayContaining([
-//         expect.objectContaining({ title: 'Task 1' }),
-//         expect.objectContaining({ title: 'Task 2' }),
-//       ]),
-//       expect.objectContaining({ concurrent: false }),
-//     )
-//   })
+    const taskRunner = new TaskRunner(config)
+    const task = config.menus![0]
 
-//   it('should execute tasks in parallel when specified', async () => {
-//     const menu: MenuItem = {
-//       name: 'test',
-//       type: 'command',
-//       value: 'test command',
-//       taskRunMode: 'parallel',
-//     }
+    await taskRunner.executeTask(task)
 
-//     const executionOrder: number[] = []
-//     const tasks = [
-//       async () => {
-//         await new Promise(resolve => setTimeout(resolve, 10))
-//         executionOrder.push(1)
-//       },
-//       async () => {
-//         executionOrder.push(2)
-//       },
-//     ]
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'))
+  })
 
-//     await TaskRunner.executeTasks(menu, tasks, { env: {}, menuEnv: {} })
-//     expect(executionOrder).toEqual([2, 1])
-//   })
+  it('should not log debug messages when debug is false', async () => {
+    const config: CliConfig = {
+      debug: false,
+      menus: [{
+        name: 'Test Task',
+        type: 'command',
+        task: 'echo "test"'
+      }]
+    }
 
-//   it('should execute tasks in serial by default', async () => {
-//     const menu: MenuItem = {
-//       name: 'test',
-//       type: 'command',
-//       value: 'test command',
-//     }
+    const taskRunner = new TaskRunner(config)
+    const task = config.menus![0]
 
-//     const executionOrder: number[] = []
-//     const tasks = [
-//       async () => {
-//         await new Promise(resolve => setTimeout(resolve, 10))
-//         executionOrder.push(1)
-//       },
-//       async () => {
-//         executionOrder.push(2)
-//       },
-//     ]
+    await taskRunner.executeTask(task)
 
-//     await TaskRunner.executeTasks(menu, tasks, { env: {}, menuEnv: {} })
-//     expect(executionOrder).toEqual([1, 2])
-//   })
+    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'))
+  })
 
-//   it('should execute menus with correct run mode', async () => {
-//     const menus: MenuItem[] = [
-//       {
-//         name: 'menu1',
-//         type: 'command',
-//         value: 'command1',
-//         tasks: [async () => {}],
-//       },
-//       {
-//         name: 'menu2',
-//         type: 'command',
-//         value: 'command2',
-//         tasks: [async () => {}],
-//       },
-//     ]
+  it('should not log debug messages when debug is undefined', async () => {
+    const config: CliConfig = {
+      menus: [{
+        name: 'Test Task',
+        type: 'command',
+        task: 'echo "test"'
+      }]
+    }
 
-//     const taskList = TaskRunner.createMenuTaskList(menus, 'parallel')
-//     expect(Listr).toHaveBeenCalledWith(
-//       expect.arrayContaining([
-//         expect.objectContaining({ title: 'menu1' }),
-//         expect.objectContaining({ title: 'menu2' }),
-//       ]),
-//       expect.objectContaining({ concurrent: true }),
-//     )
-//   })
-// })
+    const taskRunner = new TaskRunner(config)
+    const task = config.menus![0]
+
+    await taskRunner.executeTask(task)
+
+    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'))
+  })
+})

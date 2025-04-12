@@ -48,7 +48,8 @@ export interface MenuItem {
 
 export interface CliConfig {
   menus?: MenuItem[]
-  env?: Record<string, string> // Global environment variables
+  env?: Record<string, string>  // Global environment variables
+  debug?: boolean               // Global debug flag
 }
 
 export async function defineMenu(opts: CliConfig): Promise<CliConfig> {

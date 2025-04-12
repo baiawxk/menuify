@@ -22,7 +22,7 @@ export class TaskRunner {
       menuEnv: {},
       inputs: undefined,
       taskStatuses: new Map(),
-      debug: true
+      debug: this.menuConfig.debug // Use debug from config
     }
     // Initialize with empty array to allow executing individual tasks
     this.dependencyResolver = new DependencyResolver(config?.menus || [])

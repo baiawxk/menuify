@@ -30,7 +30,6 @@ export async function searchMenu(config: CliConfig, options: DisplayOptions): Pr
   const menus = config.menus || []
   return await search<MenuItem>({
     message: 'Select a menu to execute',
-    placeholder: 'Start typing to search...',
     pageSize: 15,
     source: async (input) => {
       if (!input)
