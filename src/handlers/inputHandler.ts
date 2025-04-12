@@ -49,7 +49,6 @@ export class InputHandler {
 
     return await search({
       message: taskInput.description || `Select value for ${taskInput.id}`,
-      initialValue: taskInput.default,
       source: async (term) => {
         if (!term)
           return taskInput.options || []
