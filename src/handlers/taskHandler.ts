@@ -1,5 +1,4 @@
-import type { MenuItem } from '../core'
-import type { ExecutionContext } from '../taskExecutor'
+import type { ExecutionContext, MenuItem } from '../core'
 import { execa } from 'execa'
 import open from 'open'
 import { EnvResolver } from '../envResolver'

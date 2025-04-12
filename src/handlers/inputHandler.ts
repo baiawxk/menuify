@@ -1,5 +1,4 @@
-import type { TaskInput } from '../core'
-import type { ExecutionContext } from '../taskExecutor'
+import type { ExecutionContext, TaskInput } from '../core'
 import { checkbox, confirm, input, search } from '@inquirer/prompts'
 
 export class InputHandler {

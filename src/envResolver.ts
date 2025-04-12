@@ -1,5 +1,4 @@
-import type { MenuItem, TaskValue } from './core'
-import type { ExecutionContext } from './taskExecutor'
+import type { ExecutionContext, MenuItem, TaskValue } from './core'
 import { isEmpty } from 'radash'
 
 export interface EnvResolverOptions {

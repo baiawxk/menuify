@@ -1,5 +1,4 @@
-import type { CliConfig, MenuItem, TaskStatus } from './core'
-import type { ExecutionContext } from './taskExecutor'
+import type { CliConfig, ExecutionContext, MenuItem, TaskStatus } from './core'
 import { Listr } from 'listr2'
 import { DependencyResolver } from './dependencyResolver'
 import { InputHandler } from './handlers/inputHandler'
