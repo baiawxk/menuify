@@ -18,13 +18,14 @@ export class TaskRunner {
     this.menuConfig = config || {}
     this.inquirerAdapter = InquirerAdapter.createRenderer([])
     this.context = {
-      env: config?.env || {},  // Initialize with global env
+      env: this.menuConfig.env || {},  // Get global env from config
       menuEnv: {},
       inputs: undefined,
       taskStatuses: new Map(),
       debug: true
     }
-    this.dependencyResolver = new DependencyResolver([])
+    // Initialize with empty array to allow executing individual tasks
+    this.dependencyResolver = new DependencyResolver(config?.menus || [])
     if (this.context.debug) console.log('[DEBUG] TaskRunner initialized with global env:', this.context.env)
   }
 
@@ -47,29 +48,29 @@ export class TaskRunner {
    */
   async executeTask(task: MenuItem): Promise<void> {
     try {
-      if (this.context.debug)
-        console.log(`[DEBUG] Executing task: ${task.name}`)
-
+      if (this.context.debug) console.log(`[DEBUG] Executing task: ${task.name}`)
+      
       // Handle dependencies first
       if (task.dependsOn?.length) {
-        if (this.context.debug)
-          console.log(`[DEBUG] Task ${task.name} has dependencies: ${task.dependsOn.join(', ')}`)
+        if (this.context.debug) console.log(`[DEBUG] ${task.name} has dependencies: ${task.dependsOn.join(', ')}`)
         for (const depName of task.dependsOn) {
           const depTask = await this.findTaskByName(depName)
           if (!depTask) {
             throw new Error(`Dependency not found: ${depName}`)
           }
+          if (this.context.debug) console.log(`[DEBUG] Executing dependency ${depName} for ${task.name}`)
           // Only execute if not already completed
           if (this.getTaskStatus(depName) !== 'completed') {
-            await this.executeTask(depTask)
+            await this.processMenu(depTask) // Changed from executeTask to processMenu for proper context handling
+          } else {
+            if (this.context.debug) console.log(`[DEBUG] Dependency ${depName} already completed, skipping`)
           }
         }
       }
 
       // Mark task as running
       this.context.taskStatuses?.set(task.name, 'running')
-      if (this.context.debug)
-        console.log(`[DEBUG] Task ${task.name} status set to running`)
+      if (this.context.debug) console.log(`[DEBUG] Task ${task.name} status set to running`)
 
       // Execute the task
       await executeMenus([task], {
@@ -79,13 +80,14 @@ export class TaskRunner {
 
       // Mark task as completed
       this.context.taskStatuses?.set(task.name, 'completed')
-      if (this.context.debug)
-        console.log(`[DEBUG] Task ${task.name} completed successfully`)
+      if (this.context.debug) console.log(`[DEBUG] Task ${task.name} completed successfully`)
     }
     catch (error) {
       this.context.taskStatuses?.set(task.name, 'failed')
-      if (this.context.debug)
+      if (this.context.debug) {
         console.log(`[DEBUG] Task ${task.name} failed:`, error)
+        if (error instanceof Error) console.log(error.stack)
+      }
       throw error
     }
   }
