@@ -94,7 +94,7 @@ export async function displayMenu(file?: string): Promise<void> {
   }
   const taskRunner = new TaskRunner(config)
   const menu = await searchMenu(config)
-  await taskRunner.processMenu(menu)
+  await taskRunner.executeTask(menu)
 }
 
 async function searchMenu(config: CliConfig) {
@@ -111,7 +111,7 @@ async function searchMenu(config: CliConfig) {
       return choices
     },
   })
-  console.log('🚀 ~ searchMenu ~ menu:', menu)
+  // console.log('🚀 ~ searchMenu ~ menu:', menu)
   return menu
 }
 

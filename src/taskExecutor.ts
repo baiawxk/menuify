@@ -1,6 +1,5 @@
 import type { MenuItem, TaskStatus } from './core'
 import { Listr } from 'listr2'
-import { EnvResolver } from './envResolver'
 import { TaskHandler } from './handlers/taskHandler'
 
 export interface ExecutionContext {
@@ -34,7 +33,7 @@ export async function executeMenus(
     title: menu.name,
     task: async () => {
       try {
-        await executeMenu(menu, context, taskHandler, options.taskRunMode || 'serial')
+        await executeMenu(menu, context, taskHandler)
       }
       catch (error) {
         if (error instanceof Error)
@@ -56,7 +55,6 @@ async function executeMenu(
   menu: MenuItem,
   context: ExecutionContext,
   taskHandler: TaskHandler,
-  taskRunMode: 'serial' | 'parallel',
 ): Promise<void> {
   if (!context.taskStatuses)
     context.taskStatuses = new Map()
@@ -69,7 +67,7 @@ async function executeMenu(
 
     // Process dependencies first
     if (menu.dependsOn?.length)
-      await processDependencies(menu, context, taskHandler, taskRunMode)
+      await processDependencies(menu, context, taskHandler)
 
     // Create menu context with merged environment variables
     const menuContext: ExecutionContext = {
@@ -91,7 +89,6 @@ async function processDependencies(
   menu: MenuItem,
   context: ExecutionContext,
   taskHandler: TaskHandler,
-  taskRunMode: 'serial' | 'parallel',
 ): Promise<void> {
   const mode = menu.runMode || 'serial'
   const deps = menu.dependsOn!.map(depName => findMenuByName(depName))
@@ -99,12 +96,12 @@ async function processDependencies(
 
   if (mode === 'parallel') {
     await Promise.all(
-      deps.map(dep => executeMenu(dep, context, taskHandler, taskRunMode)),
+      deps.map(dep => executeMenu(dep, context, taskHandler)),
     )
   }
   else {
     for (const dep of deps)
-      await executeMenu(dep, context, taskHandler, taskRunMode)
+      await executeMenu(dep, context, taskHandler)
   }
 }
 

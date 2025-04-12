@@ -17,7 +17,7 @@ export class EnvResolver {
     this.globalEnv = options.globalEnv || {}
     this.menuEnv = options.menuEnv || {}
     this.inputs = options.inputs || {}
-    console.log('🚀 ~ EnvResolver ~ constructor ~ options:', options)
+    // console.log('🚀 ~ EnvResolver ~ constructor ~ options:', options)
   }
 
   resolveMenu<T extends MenuItem>(menu: T): T {

@@ -83,7 +83,7 @@ export class TaskRunner {
 
     for (const depName of task.dependsOn) {
       const depTask = await this.findTaskByName(depName)
-      if (this.getTaskStatus(depName) !== 'completed')
+      if(depTask)
         await this.executeTask(depTask)
     }
   }
