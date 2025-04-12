@@ -1,4 +1,4 @@
-import type { MenuItem, CliConfig, TaskStatus } from './core'
+import type { CliConfig, MenuItem, TaskStatus } from './core'
 import type { ExecutionContext } from './taskExecutor'
 import { Listr } from 'listr2'
 import { DependencyResolver } from './dependencyResolver'
@@ -16,7 +16,7 @@ export class TaskRunner {
     this.dependencyResolver = new DependencyResolver(config.menus || [])
     this.inputHandler = new InputHandler()
     this.taskHandler = new TaskHandler()
-    
+
     this.logDebug('TaskRunner initialized with global env:', this.context.env)
   }
 
@@ -49,10 +49,10 @@ export class TaskRunner {
   async executeTask(task: MenuItem): Promise<void> {
     try {
       this.logDebug(`Executing task: ${task.name}`)
-      
+
       await this.processDependencies(task)
       await this.executeTaskWithStatus(task)
-      
+
       this.logDebug(`Task ${task.name} completed successfully`)
     }
     catch (error) {
@@ -89,7 +89,7 @@ export class TaskRunner {
 
   async processMenu(menu: MenuItem): Promise<void> {
     const taskContext = this.createTaskContext(menu)
-    
+
     try {
       this.logDebug(`Processing menu: ${menu.name}`)
       await this.processMenuInputs(menu, taskContext)
@@ -114,7 +114,7 @@ export class TaskRunner {
 
     this.logDebug(`Processing inputs for menu ${menu.name}`)
     taskContext.inputs = {}
-    
+
     for (const input of menu.inputs)
       await this.inputHandler.processInput(input, taskContext)
   }
