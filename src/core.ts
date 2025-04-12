@@ -20,7 +20,7 @@ export interface TaskInput {
 
 export type TaskValue = string | string[] | ((context: any) => Promise<void>)
 
-export interface BaseMenuItem {
+export interface BaseMenu {
   name: string
   dependsOn?: string[]
   inputs?: TaskInput[]
@@ -28,19 +28,20 @@ export interface BaseMenuItem {
   runMode?: 'serial' | 'parallel'
   confirmMsg?: string
   description?: string
+  group?: string
 }
 
-export interface CommandMenu extends BaseMenuItem {
+export interface CommandMenu extends BaseMenu {
   type: 'command'
   task: string | string[]
 }
 
-export interface LinkMenu extends BaseMenuItem {
+export interface LinkMenu extends BaseMenu {
   type: 'link'
   task: string | string[]
 }
 
-export interface FunctionMenu extends BaseMenuItem {
+export interface FunctionMenu extends BaseMenu {
   type: 'function'
   task: (context: any) => Promise<void>
 }
