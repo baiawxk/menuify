@@ -28,7 +28,7 @@
     - 添加类型转换逻辑
     - 更新相关测试
 
-- [ ] dependsOn not work
+- [x] dependsOn not work
   - 任务：
     - 修复任务依赖执行逻辑
     - 实现正确的依赖顺序处理
