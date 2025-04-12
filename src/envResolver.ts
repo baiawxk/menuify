@@ -1,5 +1,6 @@
 import type { MenuItem, TaskValue } from './core'
 import type { ExecutionContext } from './taskExecutor'
+import { isEmpty } from 'radash'
 
 export interface EnvResolverOptions {
   globalEnv?: Record<string, string>
@@ -76,15 +77,24 @@ export class EnvResolver {
   }
 
   private processInputVariables(value: string): string {
-    return this.replaceVariables(value, this.inputs, '${', '}')
+    if (isEmpty(this.inputs))
+      return value
+    else
+      return this.replaceVariables(value, this.inputs, '${', '}')
   }
 
   private processMenuVariables(value: string): string {
-    return this.replaceVariables(value, this.menuEnv, '%', '%')
+    if (isEmpty(this.menuEnv))
+      return value
+    else
+      return this.replaceVariables(value, this.menuEnv, '%', '%')
   }
 
   private processGlobalVariables(value: string): string {
-    return this.replaceVariables(value, this.globalEnv, '%', '%')
+    if (isEmpty(this.globalEnv))
+      return value
+    else
+      return this.replaceVariables(value, this.globalEnv, '%', '%')
   }
 
   private replaceVariables(
