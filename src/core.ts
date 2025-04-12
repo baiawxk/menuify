@@ -46,12 +46,12 @@ export interface MenuItem {
   }
 }
 
-export interface MenuOpts {
+export interface CliConfig {
   menus?: MenuItem[]
   env?: Record<string, string> // Global environment variables
 }
 
-export async function defineMenu(opts: MenuOpts): Promise<MenuOpts> {
+export async function defineMenu(opts: CliConfig): Promise<CliConfig> {
   return opts
 }
 
@@ -71,7 +71,7 @@ export async function displayMenu(file?: string): Promise<void> {
   await taskRunner.processMenu(menu)
 }
 
-async function searchMenu(config: MenuOpts) {
+async function searchMenu(config: CliConfig) {
   return await search<MenuItem>({
     message: 'Select a command to run',
     pageSize: 15,
@@ -107,7 +107,7 @@ export async function resolveConfig(file: string | undefined) {
     process.exit(1)
   }
 
-  const result = await loadConfig<MenuOpts>({
+  const result = await loadConfig<CliConfig>({
     sources: file
       ? [{ files: file }]
       : [{
@@ -118,7 +118,7 @@ export async function resolveConfig(file: string | undefined) {
   return result
 }
 
-function getMenu(config: MenuOpts) {
+function getMenu(config: CliConfig) {
   return config.menus?.map((m) => {
     const { name } = m
     return {

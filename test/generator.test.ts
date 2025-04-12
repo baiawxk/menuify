@@ -1,4 +1,4 @@
-import type { MenuOpts } from '../src/core'
+import type { CliConfig } from '../src/core'
 import { writeFile } from 'node:fs/promises'
 import { describe, expect, it, vi } from 'vitest'
 import { resolveConfig } from '../src/core'
@@ -15,7 +15,7 @@ vi.mock('../src/core', () => ({
   })),
 }))
 
-const mockConfig: MenuOpts = {
+const mockConfig: CliConfig = {
   menus: [
     {
       name: 'Test Command',

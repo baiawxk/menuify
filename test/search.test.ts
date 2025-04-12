@@ -1,4 +1,4 @@
-import type { MenuItem, MenuOpts } from '../src/core'
+import type { MenuItem, CliConfig } from '../src/core'
 import { search } from '@inquirer/prompts'
 import { describe, expect, it, vi } from 'vitest'
 import { displayMenu as displayMenuCore } from '../src/core'
@@ -10,7 +10,7 @@ vi.mock('@inquirer/prompts', () => ({
 }))
 
 describe('menu search', () => {
-  const mockConfig: MenuOpts = {
+  const mockConfig: CliConfig = {
     menus: [
       {
         name: 'Build',

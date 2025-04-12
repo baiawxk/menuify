@@ -1,4 +1,4 @@
-import type { MenuItem, MenuOpts } from './core'
+import type { MenuItem, CliConfig } from './core'
 import { search } from '@inquirer/prompts'
 import boxen from 'boxen'
 import chalk from 'chalk'
@@ -9,7 +9,7 @@ export interface DisplayOptions {
   groupByType?: boolean
 }
 
-export async function displayMenu(config: MenuOpts, options: DisplayOptions = {}): Promise<MenuItem> {
+export async function displayMenu(config: CliConfig, options: DisplayOptions = {}): Promise<MenuItem> {
   console.log(createBanner())
 
   if (config.menus?.length === 0) {
@@ -26,7 +26,7 @@ export async function displayMenu(config: MenuOpts, options: DisplayOptions = {}
   return selectedMenu
 }
 
-export async function searchMenu(config: MenuOpts, options: DisplayOptions): Promise<MenuItem> {
+export async function searchMenu(config: CliConfig, options: DisplayOptions): Promise<MenuItem> {
   const menus = config.menus || []
   return await search<MenuItem>({
     message: 'Select a menu to execute',

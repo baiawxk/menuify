@@ -1,4 +1,4 @@
-import type { MenuItem, MenuOpts, TaskInput } from './core'
+import type { MenuItem, CliConfig, TaskInput } from './core'
 import type { ExecutionContext } from './taskExecutor'
 import { execa } from 'execa'
 import { Listr } from 'listr2'
@@ -9,12 +9,12 @@ import { DependencyResolver } from './dependencyResolver'
 import { executeMenus } from './taskExecutor'
 
 export class TaskRunner {
-  private menuConfig: MenuOpts
+  private menuConfig: CliConfig
   private inquirerAdapter: InquirerAdapter
   private context: ExecutionContext
   private dependencyResolver: DependencyResolver
 
-  constructor(config?: MenuOpts) {
+  constructor(config?: CliConfig) {
     this.menuConfig = config || {}
     this.inquirerAdapter = InquirerAdapter.createRenderer([])
     this.context = {
