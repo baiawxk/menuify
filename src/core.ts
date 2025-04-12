@@ -21,8 +21,14 @@ export interface TaskInput {
   joinSymbol?: string
 }
 
+export type FunctionCtx = {
+  inputs?: Record<string, unknown>
+  env?: Record<string, string>
+  menuEnv?: Record<string, string>
+}
+
 export type MenuType = 'command' | 'link' | 'function'
-export type MenuValue = string | string[] | ((inputs?: Record<string, unknown>) => Promise<void>)
+export type MenuValue = string | string[] | ((inputs: FunctionCtx) => Promise<void>)
 
 export interface MenuItem {
   name: string
