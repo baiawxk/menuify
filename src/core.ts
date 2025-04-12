@@ -35,6 +35,9 @@ export interface BaseMenu {
 export interface CommandMenu extends BaseMenu {
   type: 'command'
   task: string | string[]
+  options?: {
+    cwd?: string
+  }
 }
 
 export interface LinkMenu extends BaseMenu {
@@ -129,7 +132,7 @@ async function createSampleConfig() {
   }
 }
 
-export async function resolveConfig(file?: string ) {
+export async function resolveConfig(file?: string) {
   if (file && !fs.existsSync(file)) {
     console.error(`config file ${file} not found`)
     process.exit(1)

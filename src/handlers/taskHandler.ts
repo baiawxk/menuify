@@ -1,4 +1,5 @@
-import type { ExecutionContext, MenuItem } from '../core'
+import type { CommandMenu, ExecutionContext, FunctionMenu, LinkMenu, MenuItem } from '../core'
+import { cwd } from 'node:process'
 import { execa } from 'execa'
 import open from 'open'
 import { EnvResolver } from '../envResolver'
@@ -26,7 +27,7 @@ export class TaskHandler {
     try {
       switch (menu.type) {
         case 'command':
-          await this.executeCommand(menu.task, context)
+          await this.executeCommand(menu, context)
           break
         case 'link':
           await this.executeLink(menu.task)
@@ -48,8 +49,8 @@ export class TaskHandler {
     }
   }
 
-  private async executeCommand(command: string | string[], context: ExecutionContext): Promise<void> {
-    const commands = Array.isArray(command) ? command : [command]
+  private async executeCommand(menu: CommandMenu, context: ExecutionContext): Promise<void> {
+    const commands = Array.isArray(menu.task) ? menu.task : [menu.task]
 
     for (const cmd of commands) {
       const resolvedCmd = this.envResolver.resolve(cmd) as string
@@ -59,6 +60,11 @@ export class TaskHandler {
       await execa(resolvedCmd, {
         shell: true,
         stdio: 'inherit',
+        cwd: menu.options?.cwd,
+        env: {
+          ...context.env,
+          ...context.menuEnv,
+        },
       })
     }
   }
