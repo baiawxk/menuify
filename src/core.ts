@@ -27,6 +27,7 @@ export interface BaseMenu {
   env?: Record<string, string>
   runMode?: 'serial' | 'parallel'
   confirmMsg?: string
+  show?: boolean
   description?: string
   group?: string
 }
@@ -146,7 +147,7 @@ export async function resolveConfig(file: string | undefined) {
 }
 
 function getMenu(config: CliConfig) {
-  return config.menus?.map((m) => {
+  return config.menus?.filter(m => m.show === undefined || m.show).map((m) => {
     const { name } = m
     return {
       name,
