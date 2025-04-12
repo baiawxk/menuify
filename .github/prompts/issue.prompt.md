@@ -12,6 +12,7 @@
 - [ ] menuItem.confirmMsg 如果填入值的时候，代表需要使用inquirer的confirm提示，确认之后才执行
 - [ ] when use functionMenu,all the inputs should be true type . and the env vars keep string type
 - [ ] dependsOn not work
+- [ ] 集成Listr2 ，然后inquirer按照Listr2的规范进行修改，使用他提供的适配器
 
 ## instructions
 - 我会在**问题和建议**中提出我的想法，你需要逐个分析，并进行修改调整。修改完成之后，需要有对应的单元测试。并且成功之后，需要将以上代办事项的状态改为完成。并在对应条目下面，简单的描述一下修改的内容。以及执行时间，年月日时分秒。
