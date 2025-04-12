@@ -129,7 +129,7 @@ async function createSampleConfig() {
   }
 }
 
-export async function resolveConfig(file: string | undefined) {
+export async function resolveConfig(file?: string ) {
   if (file && !fs.existsSync(file)) {
     console.error(`config file ${file} not found`)
     process.exit(1)

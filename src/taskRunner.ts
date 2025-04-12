@@ -4,6 +4,7 @@ import { Listr } from 'listr2'
 import { DependencyResolver } from './dependencyResolver'
 import { InputHandler } from './handlers/inputHandler'
 import { TaskHandler } from './handlers/taskHandler'
+import { confirm, input } from '@inquirer/prompts'
 
 export class TaskRunner {
   private readonly context: ExecutionContext
@@ -24,7 +25,7 @@ export class TaskRunner {
     return {
       env: this.config.env || {},
       menuEnv: {},
-      inputs: undefined,
+      inputs: {},
       taskStatuses: new Map<string, TaskStatus>(),
       debug: this.config.debug,
     }
@@ -92,14 +93,12 @@ export class TaskRunner {
 
     try {
       this.logDebug(`Processing menu: ${menu.name}`)
-
+      this.logDebug(`Processing taskContext ${menu.name}`, taskContext)
       // Add confirmation check
       if (menu.confirmMsg) {
-        const confirmed = await this.inputHandler.processInput({
-          id: `confirm_${menu.name}`,
-          type: 'confirm',
-          description: menu.confirmMsg,
-        }, taskContext)
+        const confirmed = await confirm({
+          message: menu.confirmMsg,
+        })
 
         if (!confirmed) {
           console.log(`Menu "${menu.name}" execution cancelled by user`)

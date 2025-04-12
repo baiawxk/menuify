@@ -93,7 +93,7 @@ async function processDependencies(
   taskHandler: TaskHandler,
   taskRunMode: 'serial' | 'parallel',
 ): Promise<void> {
-  const mode = menu.taskRunMode || taskRunMode
+  const mode = menu.runMode || 'serial'
   const deps = menu.dependsOn!.map(depName => findMenuByName(depName))
                              .filter((dep): dep is MenuItem => dep !== undefined)
 
