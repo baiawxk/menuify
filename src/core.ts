@@ -7,8 +7,6 @@ import { confirm, search } from '@inquirer/prompts'
 import { loadConfig } from 'unconfig'
 import { TaskRunner } from './taskRunner'
 
-export type RunMode = 'serial' | 'parallel'
-
 export type TaskInputType = 'promptString' | 'pickString' | 'confirm' | 'multiSelect'
 
 export interface TaskInput {
@@ -20,40 +18,65 @@ export interface TaskInput {
   joinSymbol?: string
 }
 
-export type FunctionCtx = {
-  inputs?: Record<string, unknown>
-  env?: Record<string, string>
-  menuEnv?: Record<string, string>
-}
+export type TaskValue = string | string[] | ((context: any) => Promise<void>)
 
-export type MenuType = 'command' | 'link' | 'function'
-export type TaskValue = string | string[] | ((inputs: FunctionCtx) => Promise<void>)
-
-export interface MenuItem {
+export interface BaseMenuItem {
   name: string
-  type: MenuType
-  task: TaskValue
-  inputs?: TaskInput[]
   dependsOn?: string[]
+  inputs?: TaskInput[]
+  env?: Record<string, string>
+  runMode?: 'serial' | 'parallel'
   confirmMsg?: string
-  taskRunMode?: RunMode
-  runMode?:RunMode
-  env?: Record<string, string> // Add menu-level environment variables
   description?: string
-  group?: string
-  options?: {
-    cwd?: string
-  }
 }
+
+export interface CommandMenuItem extends BaseMenuItem {
+  type: 'command'
+  task: string | string[]
+}
+
+export interface LinkMenuItem extends BaseMenuItem {
+  type: 'link'
+  task: string | string[]
+}
+
+export interface FunctionMenuItem extends BaseMenuItem {
+  type: 'function'
+  task: (context: any) => Promise<void>
+}
+
+export type MenuItem = CommandMenuItem | LinkMenuItem | FunctionMenuItem
+
+export interface ExecutionContext {
+  env: Record<string, string>
+  menuEnv: Record<string, string>
+  inputs?: Record<string, unknown>
+  taskStatuses?: Map<string, TaskStatus>
+  debug?: boolean
+}
+
+export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed'
 
 export interface CliConfig {
+  debug?: boolean
+  env?: Record<string, string>
   menus?: MenuItem[]
-  env?: Record<string, string>  // Global environment variables
-  debug?: boolean               // Global debug flag
 }
 
-export async function defineMenu(opts: CliConfig): Promise<CliConfig> {
-  return opts
+export function defineMenu(config: CliConfig): CliConfig {
+  return config
+}
+
+export function isCommandMenuItem(menu: MenuItem): menu is CommandMenuItem {
+  return menu.type === 'command'
+}
+
+export function isLinkMenuItem(menu: MenuItem): menu is LinkMenuItem {
+  return menu.type === 'link'
+}
+
+export function isFunctionMenuItem(menu: MenuItem): menu is FunctionMenuItem {
+  return menu.type === 'function'
 }
 
 export async function displayMenu(file?: string): Promise<void> {

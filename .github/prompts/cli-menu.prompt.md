@@ -13,10 +13,7 @@
      - 如果 value 是一个函数，函数第一个参数是 ctx，`ctx.env` 代表全局环境变量，`ctx.menuEnv` 代表菜单环境变量。
      - 如果 value 是一个字符串，字符串中的 `%varname%` 会被替换为全局环境变量，`{varName}` 会被替换为菜单环境变量。
      - 如果 value 是一个字符串数组，数组中的每个字符串中的 `%varname%` 会被替换为全局环境变量，`{varName}` 会被替换为菜单环境变量。
-   - Task 依赖关系：
-     - 如果 value 是一个字符串数组，通过 Menu 配置的 `taskRunMode` 可以指定这个数组的执行模式：
-       - `serial`：串行执行，默认值。
-       - `parallel`：并行执行。
+  
 
 2. **菜单：Menu**
    - Menu 是在 `cli.config.ts` 中定义的菜单配置。
@@ -81,7 +78,7 @@
       5. **转化为 Task**：将 Menu 转化为一个或多个 Task，形成 Task 数组。
          - 假设 MenuA（对应 TaskA[]）依赖于 MenuB（对应 TaskB[]）和 MenuC（对应 TaskC[]），MenuB 依赖于 MenuD（对应 TaskD[]）。
          - 执行顺序为：MenuD -> MenuB -> MenuC -> MenuA。
-         - MenuB 和 MenuC 是否并行执行，取决于 MenuA 的 `runMode`，MenuB 中的 Task 执行顺序取决于 MenuB 的 `taskRunMode`。
+         - MenuB 和 MenuC 是否并行执行，取决于 MenuA 的 `runMode`。
       6. **执行 Task**：通过以上步骤，将 Menu 转化为 Task 数组，然后通过 `listr2` 执行。
 
 4. **生成跨平台 Shell 脚本**

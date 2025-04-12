@@ -1,34 +1,38 @@
 {
+  "debug": false,
+  "env": {
+    "NODE_ENV": "development"
+  },
   "menus": [
     {
       "name": "Build Project",
       "type": "command",
-      "value": "npm run build",
+      "task": "npm run build",
       "description": "Build the project"
     },
     {
       "name": "Start Dev Server",
       "type": "command",
-      "value": "npm run dev",
+      "task": "npm run dev",
       "description": "Start development server"
     },
     {
       "name": "Run Tests",
       "type": "command",
-      "value": ["npm test", "npm run coverage"],
+      "task": ["npm test", "npm run coverage"],
       "description": "Run tests with coverage",
       "confirmMsg": "Run all tests?"
     },
     {
       "name": "Open Documentation",
       "type": "link",
-      "value": "https://example.com/docs",
+      "task": "https://example.com/docs",
       "description": "Open project documentation"
     },
     {
       "name": "Deploy",
       "type": "command",
-      "value": "npm run deploy -- --env=${environment}",
+      "task": "npm run deploy -- --env=${environment}",
       "description": "Deploy to environment",
       "dependsOn": ["Build Project", "Run Tests"],
       "inputs": [
@@ -40,10 +44,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "globalEnv": {
-      "NODE_ENV": "development"
-    }
-  }
+  ]
 }

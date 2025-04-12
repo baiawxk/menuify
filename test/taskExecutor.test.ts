@@ -1,12 +1,20 @@
-import { spawn } from 'node:child_process'
-import { open } from 'open'
+import type { ExecutionContext } from '../src/taskExecutor'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { execa } from 'execa'
+import open from 'open'
 import { EnvResolver } from '../src/envResolver'
-import { executeTask } from '../src/taskExecutor'
+import { executeMenus } from '../src/taskExecutor'
+import type { CliConfig, MenuItem } from '../src/core'
 
 // Mock dependencies
-vi.mock('node:child_process')
-vi.mock('open')
+vi.mock('execa', () => ({
+  execa: vi.fn().mockResolvedValue({ stdout: '', stderr: '' }),
+}))
+
+vi.mock('open', () => ({
+  default: vi.fn()
+}))
+
 vi.mock('../src/envResolver', () => ({
   EnvResolver: vi.fn(() => ({
     resolve: vi.fn(str => str),
@@ -14,72 +22,161 @@ vi.mock('../src/envResolver', () => ({
 }))
 
 describe('taskExecutor', () => {
-  const mockSpawn = {
-    on: vi.fn(),
-    stdout: { pipe: vi.fn() },
-    stderr: { pipe: vi.fn() },
-  }
+  let mockExeca: jest.Mock
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(spawn).mockReturnValue(mockSpawn as any)
+    mockExeca = vi.mocked(execa)
   })
 
   it('should execute command task', async () => {
-    const task = {
+    const menu: MenuItem = {
       name: 'test',
       type: 'command',
-      value: 'echo hello',
+      task: 'echo hello'
     }
 
-    await executeTask(task)
-    expect(spawn).toHaveBeenCalledWith('echo hello', {
-      stdio: 'inherit',
-      shell: true,
+    await executeMenus([menu], {
+      context: { env: {}, menuEnv: {} },
     })
+
+    expect(mockExeca).toHaveBeenCalledWith(
+      'echo hello',
+      expect.objectContaining({ shell: true, stdio: 'inherit' })
+    )
   })
 
   it('should execute link task', async () => {
-    const task = {
+    const menu: MenuItem = {
       name: 'test',
       type: 'link',
-      value: 'https://example.com',
+      task: 'https://example.com'
     }
 
-    await executeTask(task)
+    await executeMenus([menu], {
+      context: { env: {}, menuEnv: {} },
+    })
+
     expect(open).toHaveBeenCalledWith('https://example.com')
   })
 
   it('should resolve env variables', async () => {
-    const task = {
+    const menu: MenuItem = {
       name: 'test',
       type: 'command',
-      value: 'echo %HOME%',
+      task: 'echo %HOME%'
     }
 
-    const mockResolver = new EnvResolver()
-    vi.mocked(mockResolver.resolve).mockReturnValue('echo /home/user')
+    const context: ExecutionContext = {
+      env: { HOME: '/home/user' },
+      menuEnv: {}
+    }
 
-    await executeTask(task, { envResolver: mockResolver })
-    expect(mockResolver.resolve).toHaveBeenCalledWith('echo %HOME%')
-    expect(spawn).toHaveBeenCalledWith('echo /home/user', {
-      stdio: 'inherit',
-      shell: true,
+    await executeMenus([menu], { context,  })
+
+    expect(mockExeca).toHaveBeenCalledWith(
+      'echo /home/user',
+      expect.objectContaining({ shell: true, stdio: 'inherit' })
+    )
+  })
+
+  describe('environment variable precedence', () => {
+    it('should give precedence to menu env over global env', async () => {
+      const menu: MenuItem = {
+        name: 'Test ENV',
+        type: 'command',
+        task: 'echo %SHARED_VAR%',
+        env: {
+          SHARED_VAR: 'menu-value',
+        },
+      }
+
+      const context = {
+        env: {
+          SHARED_VAR: 'global-value',
+        },
+        menuEnv: {},
+        debug: true,
+      }
+
+      await executeMenus([menu], { context, })
+
+      expect(mockExeca).toHaveBeenCalledWith(
+        'echo menu-value',
+        expect.objectContaining({ shell: true, stdio: 'inherit' }),
+      )
+    })
+
+    it('should resolve both global and menu variables', async () => {
+      const menu: MenuItem = {
+        name: 'Test Both ENV',
+        type: 'command',
+        task: 'echo %GLOBAL_VAR% {MENU_VAR}',
+        env: {
+          MENU_VAR: 'menu-value',
+        },
+      }
+
+      const context = {
+        env: {
+          GLOBAL_VAR: 'global-value',
+        },
+        menuEnv: {},
+        debug: true,
+      }
+
+      await executeMenus([menu], { context,  })
+
+      expect(mockExeca).toHaveBeenCalledWith(
+        'echo global-value menu-value',
+        expect.objectContaining({ shell: true, stdio: 'inherit' }),
+      )
     })
   })
 
-  it('should handle command error', async () => {
-    const task = {
-      name: 'test',
-      type: 'command',
-      value: 'invalid-command',
-    }
+  describe('task execution modes', () => {
+    it('should execute tasks serially by default', async () => {
+      const menus = [
+        { name: 'Task 1', type: 'command', task: 'echo "task1"' },
+        { name: 'Task 2', type: 'command', task: 'echo "task2"' },
+      ] as MenuItem[]
 
-    mockSpawn.on.mockImplementation((event, cb) => {
-      if (event === 'error')
-        cb(new Error('Command failed'))
+      await executeMenus(menus, { context: { env: {}, menuEnv: {} } })
+
+      expect(mockExeca).toHaveBeenNthCalledWith(1,
+        'echo "task1"',
+        expect.objectContaining({ shell: true }),
+      )
+      expect(mockExeca).toHaveBeenNthCalledWith(2,
+        'echo "task2"',
+        expect.objectContaining({ shell: true }),
+      )
     })
 
-    await expect(executeTask(task)).rejects.toThrow('Command failed')
+    it('should handle command error', async () => {
+      mockExeca.mockRejectedValueOnce(new Error('Command failed'))
+
+      await expect(executeMenus([
+        { name: 'Failed Task', type: 'command', task: 'invalid-command' },
+      ] as MenuItem[])).rejects.toThrow('Command failed')
+    })
+  })
+
+  describe('debug configuration', () => {
+    it('should enable debug logging when debug is true', async () => {
+      const config: CliConfig = {
+        debug: true,
+        menus: [{
+          name: 'Test Task',
+          type: 'command',
+          task: 'echo "test"',
+        }],
+      }
+
+      const consoleSpy = vi.spyOn(console, 'log')
+      await executeMenus(config.menus!, { context: { debug: true } })
+
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'))
+    })
   })
 })

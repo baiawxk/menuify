@@ -6,7 +6,6 @@ import open from 'open'
 import { InquirerAdapter } from './adapters/inquirerAdapter'
 
 export type RunMode = 'serial' | 'parallel'
-export type TaskRunMode = 'serial' | 'parallel'
 
 export interface ExecutionContext extends InquirerContext {
   env: Record<string, string>
@@ -18,7 +17,6 @@ export interface ExecutionContext extends InquirerContext {
 
 export interface TaskExecutorOptions {
   runMode?: RunMode
-  taskRunMode?: TaskRunMode
   context: ExecutionContext
 }
 
@@ -41,7 +39,7 @@ export async function executeMenus(menus: MenuItem[], options: TaskExecutorOptio
  * Executes a single menu and its tasks based on the specified task run mode
  */
 async function executeMenu(menu: MenuItem, options: TaskExecutorOptions): Promise<void> {
-  const { taskRunMode = 'serial', context } = options
+  const { context } = options
 
   // Initialize task status tracking if not exists
   if (!context.taskStatuses) {
@@ -53,14 +51,9 @@ async function executeMenu(menu: MenuItem, options: TaskExecutorOptions): Promis
     // Convert menu to tasks
     const tasks = convertMenuToTasks(menu, context)
 
-    // Execute tasks based on taskRunMode
-    if (taskRunMode === 'parallel') {
-      await Promise.all(tasks.map(task => executeTask(task, context)))
-    }
-    else {
-      for (const task of tasks)
-        await executeTask(task, context)
-    }
+    // Execute tasks 
+    for (const task of tasks)
+      await executeTask(task, context)
 
     context.taskStatuses.set(menu.name, 'completed')
   }

@@ -22,9 +22,8 @@ export class EnvResolver {
    * Resolves environment variables in a menu item's value
    */
   resolveMenu<T extends MenuItem>(menu: T): T {
-    if (menu.task === undefined) {
+    if (menu.task === undefined)
       throw new Error(`Menu ${menu.name} has no value`)
-    }
 
     const resolvedValue = this.resolveValue(menu.task)
 
@@ -38,9 +37,8 @@ export class EnvResolver {
    * Resolves a menu value which can be a string, string array, or function
    */
   private resolveValue(value: TaskValue): TaskValue {
-    if (typeof value === 'function') {
+    if (typeof value === 'function')
       return value
-    }
     return this.resolve(value)
   }
 
@@ -49,15 +47,13 @@ export class EnvResolver {
    */
   resolve(value: string | string[]): string | string[] {
     try {
-      if (Array.isArray(value)) {
+      if (Array.isArray(value))
         return value.map(v => this.resolveString(v))
-      }
       return this.resolveString(value)
     }
     catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof Error)
         throw new TypeError(`Failed to resolve variables: ${error.message}`)
-      }
       throw error
     }
   }
@@ -66,7 +62,8 @@ export class EnvResolver {
    * Validates if a value needs variable resolution
    */
   private needsResolution(value: string): boolean {
-    return /(\$\{[\w-]+\}|\{[\w-]+\}|%[\w-]+%)/.test(value)
+    return typeof value === 'string' 
+      && /(\$\{[\w-]+\}|\{[\w-]+\}|%[\w-]+%)/.test(value)
   }
 
   /**
@@ -76,28 +73,28 @@ export class EnvResolver {
    * 3. Global variables (lowest priority)
    */
   private resolveString(value: string): string {
-    if (typeof value !== 'string') {
+    if (typeof value !== 'string')
       throw new TypeError('Value must be a string')
-    }
 
     // Skip resolution if no variables present
-    if (!this.needsResolution(value)) {
+    if (!this.needsResolution(value))
       return value
-    }
 
     let result = value
 
-    // Replace input variables (${varName}) - highest priority
+    // First replace input variables (${varName}) - highest priority
     result = this.replaceVariables(result, this.inputs, '${', '}')
 
-    // Replace menu variables ({varName})
+    // Then replace menu variables ({varName})
     result = this.replaceVariables(result, this.menuEnv, '{', '}')
 
-    // Replace global variables (%varname%)
+    // Finally replace global variables (%varname%) - lowest priority
     result = this.replaceVariables(result, this.globalEnv, '%', '%')
 
-    // Validate no unresolved variables
-    this.validateNoUnresolvedVariables(result)
+    // Check for any unresolved variables
+    const unresolved = this.findUnresolvedVariables(result)
+    if (unresolved.length > 0)
+      throw new Error(`Unresolved variables: ${unresolved.join(', ')}`)
 
     return result
   }
@@ -111,30 +108,36 @@ export class EnvResolver {
     prefix: string,
     suffix: string,
   ): string {
-    let result = str
     const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const escapedSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const pattern = new RegExp(`${escapedPrefix}([\\w-]+)${escapedSuffix}`, 'g')
 
-    return result.replace(pattern, (_, key) => {
+    return str.replace(pattern, (match, key) => {
       const val = values[key]
-      return val !== undefined ? String(val) : `${prefix}${key}${suffix}`
+      // Only replace if the value exists
+      return val !== undefined ? String(val) : match
     })
   }
 
   /**
-   * Validate that there are no unresolved variables in the string
+   * Find any unresolved variables in the string
    */
-  private validateNoUnresolvedVariables(str: string): void {
-    const unresolved = [
-      ...str.matchAll(/\$\{([\w-]+)\}/g),
-      ...str.matchAll(/\{([\w-]+)\}/g),
-      ...str.matchAll(/%([\w-]+)%/g),
-    ].map(match => match[1])
+  private findUnresolvedVariables(str: string): string[] {
+    const patterns = [
+      /\$\{([\w-]+)\}/g, // Input variables
+      /\{([\w-]+)\}/g,   // Menu variables
+      /%([\w-]+)%/g,     // Global variables
+    ]
 
-    if (unresolved.length > 0) {
-      throw new Error(`Unresolved variables: ${unresolved.join(', ')}`)
+    const unresolved = new Set<string>()
+    for (const pattern of patterns) {
+      let match
+      while ((match = pattern.exec(str)) !== null) {
+        unresolved.add(match[1])
+      }
     }
+
+    return Array.from(unresolved)
   }
 
   /**
@@ -148,23 +151,14 @@ export class EnvResolver {
     }
   }
 
-  /**
-   * Updates input variables
-   */
   setInputs(inputs: Record<string, unknown>): void {
     this.inputs = { ...inputs }
   }
 
-  /**
-   * Updates menu environment variables
-   */
   setMenuEnv(menuEnv: Record<string, string>): void {
     this.menuEnv = { ...menuEnv }
   }
 
-  /**
-   * Updates global environment variables
-   */
   setGlobalEnv(globalEnv: Record<string, string>): void {
     this.globalEnv = { ...globalEnv }
   }

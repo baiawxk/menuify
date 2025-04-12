@@ -89,7 +89,6 @@ export default defineMenu({
       ],
       dependsOn: ['Install'],
       confirmMsg: 'Start building?',
-      taskRunMode: 'serial'
     },
     // Multiple commands
     {
@@ -100,7 +99,6 @@ export default defineMenu({
         'npm install',
         'npm run prepare'
       ],
-      taskRunMode: 'serial'
     },
     // Custom function
     {
@@ -174,7 +172,6 @@ interface TaskInput {
   type: 'command',
   value: 'npm run deploy',
   dependsOn: ['Build', 'Test'], // Tasks to run before
-  taskRunMode: 'serial'         // 'serial' or 'parallel'
 }
 ```
 

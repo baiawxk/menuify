@@ -34,15 +34,7 @@ describe('dependencyResolver', () => {
       .toThrow('Circular dependency detected: a -> b -> a')
   })
 
-  it('should handle parallel dependencies', () => {
-    const parallelMenus = [
-      { name: 'a', dependsOn: [], taskRunMode: 'parallel' },
-      { name: 'b', dependsOn: ['a'] },
-      { name: 'c', dependsOn: ['a'] }
-    ]
-    const result = resolveDependencies(parallelMenus, 'b')
-    expect(result[0].taskRunMode).toBe('parallel')
-  })
+
 
   it('should return empty array for menu without dependencies', () => {
     const result = resolveDependencies(mockMenus, 'clean')

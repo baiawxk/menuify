@@ -51,7 +51,7 @@ describe('taskRunner', () => {
     const task: CommandMenu = {
       name: 'Test Task',
       type: 'command',
-      value: 'echo "test"',
+      task: 'echo "test"',
     }
 
     await taskRunner.executeTask(task)
@@ -62,12 +62,12 @@ describe('taskRunner', () => {
     const task1: CommandMenu = {
       name: 'Task 1',
       type: 'command',
-      value: 'echo "task1"',
+      task: 'echo "task1"',
     }
     const task2: CommandMenu = {
       name: 'Task 2',
       type: 'command',
-      value: 'echo "task2"',
+      task: 'echo "task2"',
       dependsOn: ['Task 1'],
     }
 
@@ -92,7 +92,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'Prompt Task',
         type: 'command',
-        value: 'echo "$userInput"', // Use regular string, replacement happens in runtime
+        task: 'echo "${userInput}"',
         inputs: [{
           id: 'userInput',
           type: 'promptString',
@@ -115,7 +115,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'Pick Task',
         type: 'command',
-        value: 'echo "$selectedOption"',
+        task: 'echo "${selectedOption}"',
         inputs: [{
           id: 'selectedOption',
           type: 'pickString',
@@ -136,7 +136,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'Confirm Task',
         type: 'command',
-        value: 'echo "confirmed"',
+        task: 'echo "confirmed"',
         inputs: [{
           id: 'confirmed',
           type: 'confirm',
@@ -159,7 +159,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'MultiSelect Task',
         type: 'command',
-        value: 'echo "${selected}"',
+        task: 'echo "${selected}"',
         inputs: [{
           id: 'selected',
           type: 'multiSelect',
@@ -188,7 +188,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'Multi Input Task',
         type: 'command',
-        value: 'echo "$input1 $input2"',
+        task: 'echo "${input1} ${input2}"',
         inputs: [
           {
             id: 'input1',
