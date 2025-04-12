@@ -1,5 +1,6 @@
-import type { CommandMenu, FunctionMenu, LinkMenu } from '../src/core'
-import { input, search, confirm, checkbox } from '@inquirer/prompts'
+import type { CommandMenu, FunctionMenu, LinkMenu, MenuItem } from '../src/core'
+import { checkbox, confirm, input, search } from '@inquirer/prompts'
+import { Listr } from 'listr2'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TaskRunner } from '../src/taskRunner'
 
@@ -16,6 +17,26 @@ vi.mock('execa', () => ({
       return Promise.reject(new Error('Command failed'))
     return Promise.resolve({ stdout: 'command output' })
   }),
+}))
+
+vi.mock('listr2', () => ({
+  Listr: vi.fn().mockImplementation((tasks, options) => ({
+    run: async () => {
+      if (options?.concurrent) {
+        await Promise.all(tasks.map(t => t.task()))
+      }
+      else {
+        for (const task of tasks)
+          await task.task()
+      }
+    },
+    tasks,
+    options,
+  })),
+}))
+
+vi.mock('open', () => ({
+  default: vi.fn(),
 }))
 
 describe('taskRunner', () => {
@@ -190,13 +211,13 @@ describe('taskRunner', () => {
     })
   })
 
-  describe('Menu Types', () => {
+  describe('menu Types', () => {
     it('should handle function type menu', async () => {
       const mockFn = vi.fn()
       const task: FunctionMenu = {
         name: 'Function Task',
         type: 'function',
-        value: mockFn
+        value: mockFn,
       }
 
       await taskRunner.processMenu(task)
@@ -215,9 +236,9 @@ describe('taskRunner', () => {
           {
             id: 'testInput',
             type: 'promptString',
-            description: 'Enter test input'
-          }
-        ]
+            description: 'Enter test input',
+          },
+        ],
       }
 
       await taskRunner.processMenu(task)
@@ -228,7 +249,7 @@ describe('taskRunner', () => {
       const task: LinkMenu = {
         name: 'Link Task',
         type: 'link',
-        value: 'https://example.com'
+        value: 'https://example.com',
       }
 
       await taskRunner.processMenu(task)
@@ -237,3 +258,106 @@ describe('taskRunner', () => {
     })
   })
 })
+
+// describe('taskRunner', () => {
+//   beforeEach(() => {
+//     vi.clearAllMocks()
+//   })
+
+//   it('should create a task list with correct configuration', () => {
+//     const menu: MenuItem = {
+//       name: 'test',
+//       type: 'command',
+//       value: 'test command',
+//       taskRunMode: 'serial',
+//     }
+
+//     const tasks = [
+//       async () => { /* task1 */ },
+//       async () => { /* task2 */ },
+//     ]
+
+//     const context = { env: {}, menuEnv: {} }
+//     const taskList = TaskRunner.createTaskList(menu, tasks, context)
+
+//     expect(taskList).toBeDefined()
+//     expect(Listr).toHaveBeenCalledWith(
+//       expect.arrayContaining([
+//         expect.objectContaining({ title: 'Task 1' }),
+//         expect.objectContaining({ title: 'Task 2' }),
+//       ]),
+//       expect.objectContaining({ concurrent: false }),
+//     )
+//   })
+
+//   it('should execute tasks in parallel when specified', async () => {
+//     const menu: MenuItem = {
+//       name: 'test',
+//       type: 'command',
+//       value: 'test command',
+//       taskRunMode: 'parallel',
+//     }
+
+//     const executionOrder: number[] = []
+//     const tasks = [
+//       async () => {
+//         await new Promise(resolve => setTimeout(resolve, 10))
+//         executionOrder.push(1)
+//       },
+//       async () => {
+//         executionOrder.push(2)
+//       },
+//     ]
+
+//     await TaskRunner.executeTasks(menu, tasks, { env: {}, menuEnv: {} })
+//     expect(executionOrder).toEqual([2, 1])
+//   })
+
+//   it('should execute tasks in serial by default', async () => {
+//     const menu: MenuItem = {
+//       name: 'test',
+//       type: 'command',
+//       value: 'test command',
+//     }
+
+//     const executionOrder: number[] = []
+//     const tasks = [
+//       async () => {
+//         await new Promise(resolve => setTimeout(resolve, 10))
+//         executionOrder.push(1)
+//       },
+//       async () => {
+//         executionOrder.push(2)
+//       },
+//     ]
+
+//     await TaskRunner.executeTasks(menu, tasks, { env: {}, menuEnv: {} })
+//     expect(executionOrder).toEqual([1, 2])
+//   })
+
+//   it('should execute menus with correct run mode', async () => {
+//     const menus: MenuItem[] = [
+//       {
+//         name: 'menu1',
+//         type: 'command',
+//         value: 'command1',
+//         tasks: [async () => {}],
+//       },
+//       {
+//         name: 'menu2',
+//         type: 'command',
+//         value: 'command2',
+//         tasks: [async () => {}],
+//       },
+//     ]
+
+//     const taskList = TaskRunner.createMenuTaskList(menus, 'parallel')
+//     expect(Listr).toHaveBeenCalledWith(
+//       expect.arrayContaining([
+//         expect.objectContaining({ title: 'menu1' }),
+//         expect.objectContaining({ title: 'menu2' }),
+//       ]),
+//       expect.objectContaining({ concurrent: true }),
+//     )
+//   })
+// })

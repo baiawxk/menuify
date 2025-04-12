@@ -1,54 +1,49 @@
 {
   "menus": [
     {
-      "name": "Start Development",
-      "type": "command",
-      "value": "npm run dev",
-      "group": "develop"
-    },
-    {
       "name": "Build Project",
       "type": "command",
       "value": "npm run build",
-      "group": "build"
+      "description": "Build the project"
     },
     {
-      "name": "Test",
+      "name": "Start Dev Server",
       "type": "command",
-      "value": "npm test",
-      "group": "test"
+      "value": "npm run dev",
+      "description": "Start development server"
     },
     {
-      "name": "Git Operations",
+      "name": "Run Tests",
       "type": "command",
-      "value": "${command}",
-      "group": "git",
-      "inputs": [
-        {
-          "id": "command",
-          "type": "pickString",
-          "description": "Select git operation",
-          "options": [
-            "git status",
-            "git add .",
-            "git commit -m \"${message}\"",
-            "git push",
-            "git pull"
-          ]
-        },
-        {
-          "id": "message",
-          "type": "promptString",
-          "description": "Enter commit message",
-          "default": "update"
-        }
-      ]
+      "value": ["npm test", "npm run coverage"],
+      "description": "Run tests with coverage",
+      "confirmMsg": "Run all tests?"
     },
     {
       "name": "Open Documentation",
       "type": "link",
-      "value": "https://docs.example.com",
-      "group": "help"
+      "value": "https://example.com/docs",
+      "description": "Open project documentation"
+    },
+    {
+      "name": "Deploy",
+      "type": "command",
+      "value": "npm run deploy -- --env=${environment}",
+      "description": "Deploy to environment",
+      "dependsOn": ["Build Project", "Run Tests"],
+      "inputs": [
+        {
+          "id": "environment",
+          "type": "pickString",
+          "description": "Select deployment environment",
+          "options": ["development", "staging", "production"]
+        }
+      ]
     }
-  ]
+  ],
+  "env": {
+    "globalEnv": {
+      "NODE_ENV": "development"
+    }
+  }
 }

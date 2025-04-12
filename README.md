@@ -1,195 +1,225 @@
 # menuify
 
-A simple CLI menu generation tool to help you quickly create interactive command-line menus.
+🎯 A powerful CLI menu generator with advanced features like task dependencies, user inputs, and environment variables support.
 
-## Features
+强大的CLI菜单生成器，支持任务依赖、用户输入和环境变量等高级特性。
 
-- 🚀 Quickly create interactive CLI menus
-- 📝 Supports multiple configuration file formats (TypeScript, JavaScript, JSON)
-- 🛠️ Execute commands and open links
-- 🎯 Interactive inputs and selections
-- ⏱️ Task scheduling and dependency management
-- ⚡ Lightweight and easy to use
-- 🎨 Displays a customizable banner and formatted menu groups
+## ✨ Features
 
-## Installation
+- � Interactive CLI menu with fuzzy search
+- 🔧 Auto config loading via `unconfig`
+- 💻 Execute commands, open links, or run custom functions
+- 📝 Rich input types support (prompt, pick, confirm, multi-select)
+- 🔄 Task dependencies and execution modes
+- 🌍 Environment variables support
+
+## 📦 Installation
 
 ```bash
 npm install menuify
-# or
-pnpm add menuify
-# or
-yarn add menuify
 ```
 
-## Usage
+## 🚀 Quick Start
 
-### 1. Create a Configuration File
+1. Initialize config:
+```bash
+menuify init
+```
 
-Create a `cli.config.ts` (or `.js`/`.json`) file in the project root:
-
+2. Or create `cli.config.ts` manually:
 ```typescript
 import { defineMenu } from 'menuify'
 
 export default defineMenu({
   menus: [
     {
-      name: 'Build Project',
+      name: 'Install Dependencies',
       type: 'command',
-      value: 'npm run build ${env}',
-      inputs: [
-        {
-          id: 'env',
-          type: 'pickString',
-          description: 'Select build environment',
-          options: ['development', 'staging', 'production'],
-          default: 'development'
-        }
-      ]
+      value: 'npm install'
     },
     {
-      name: 'Deploy Project',
+      name: 'Start Dev',
       type: 'command',
-      value: 'deploy.sh ${version}',
-      inputs: [
-        {
-          id: 'version',
-          type: 'promptString',
-          description: 'Enter version number',
-          default: '1.0.0'
-        }
-      ]
+      value: 'npm run dev'
     },
     {
-      name: 'Open Documentation',
+      name: 'Open Docs',
       type: 'link',
-      value: 'https://example.com/docs'
-    },
-    {
-      name: 'Run Custom Function',
-      type: 'function',
-      value: async (inputs) => {
-        console.log('Custom function executed with inputs:', inputs)
-      },
-      inputs: [
-        {
-          id: 'input1',
-          type: 'promptString',
-          description: 'Enter a value for input1'
-        }
-      ]
+      value: 'https://github.com/baiawxk/cli-menu'
     }
   ]
 })
 ```
 
-### 2. Run the Menu
-
+3. Run:
 ```bash
 menuify
 ```
 
-You can also specify a custom configuration file:
+## ⚙️ Advanced Configuration
 
-```bash
-menuify -f path/to/your/config.ts
+### Complete Example
+```typescript
+import { defineMenu } from 'menuify'
+
+export default defineMenu({
+  // Environment variables configuration
+  env: {
+    // Environment options
+    NODE_ENV: 'development'
+  },
+  menus: [
+    // Command with user inputs
+    {
+      name: 'Build Project',
+      type: 'command',
+      value: 'npm run build',
+      inputs: [
+        {
+          id: 'env',
+          type: 'pickString',
+          description: 'Select environment',
+          options: ['dev', 'staging', 'prod']
+        },
+        {
+          id: 'optimize',
+          type: 'confirm',
+          description: 'Enable optimization?'
+        }
+      ],
+      dependsOn: ['Install'],
+      confirmMsg: 'Start building?',
+      taskRunMode: 'serial'
+    },
+    // Multiple commands
+    {
+      name: 'Setup Project',
+      type: 'command',
+      value: [
+        'git init',
+        'npm install',
+        'npm run prepare'
+      ],
+      taskRunMode: 'serial'
+    },
+    // Custom function
+    {
+      name: 'Custom Task',
+      type: 'function',
+      value: async (inputs) => {
+        // Custom implementation
+        console.log('Running custom task...')
+      }
+    }
+  ]
+})
 ```
 
-## Configuration Options
+### Menu Item Types
 
-### MenuOpts
-
-Main configuration options:
-
+#### Command Menu
 ```typescript
-interface MenuOpts {
-  menus: MenuItem[]
-  version?: string
-}
-```
-
-### MenuItem
-
-Menu item types:
-
-#### CommandMenu
-
-For executing commands:
-
-```typescript
-interface CommandMenu {
-  name: string // Display name
-  type: 'command' // Type is command
-  value: string // Command to execute
-  inputs?: TaskInput[] // Input configuration
+{
+  name: string;              // Display name
+  type: 'command';          // Menu type
+  value: string | string[]; // Single command or command array
   options?: {
-    cwd?: string // Optional, specify command execution directory
+    cwd?: string;          // Working directory
   }
 }
 ```
 
-#### LinkMenu
-
-For opening links:
-
+#### Link Menu
 ```typescript
-interface LinkMenu {
-  name: string // Display name
-  type: 'link' // Type is link
-  value: string // URL to open
+{
+  name: string;           // Display name
+  type: 'link';          // Menu type
+  value: string;         // URL or file path
 }
 ```
 
-#### FunctionMenu
-
-For executing custom functions:
-
+#### Function Menu
 ```typescript
-interface FunctionMenu {
-  name: string // Display name
-  type: 'function' // Type is function
-  value: (inputs?: Record<string, string>) => Promise<void> // Function to execute
-  inputs?: TaskInput[] // Input configuration
+{
+  name: string;                                        // Display name
+  type: 'function';                                   // Menu type
+  value: (inputs?: Record<string, unknown>) => Promise<void>; // Custom function
 }
 ```
 
-### TaskInput
+### User Inputs
 
-Task input configuration:
+Supported input types:
+- `promptString`: Text input
+- `pickString`: Single selection
+- `confirm`: Yes/No confirmation
+- `multiSelect`: Multiple selection
 
 ```typescript
 interface TaskInput {
-  id: string // Input identifier
-  type: 'promptString' | 'pickString' | 'command' // Input type
-  description?: string // Input description
-  default?: string // Default value
-  options?: string[] // Options for pickString type
-  command?: string // Command for command type
+  id: string;              // Input identifier
+  type: TaskInputType;     // Input type
+  description?: string;    // Input description
+  default?: string;        // Default value
+  options?: string[];      // Options for pick/multiSelect
+  joinSymbol?: string;    // Join symbol for multiSelect
 }
 ```
 
-## Input Types
-
-### promptString
-Interactive prompt to get user input.
-
-### pickString
-Provide a list of options for the user to select.
-
-### command
-Get input value by executing a command.
-
-## Advanced Features
-
 ### Task Dependencies
-Use `dependsOn` to specify task dependencies, supporting sequential and parallel execution.
 
-### Variable Replacement
-Use `${variableName}` syntax to reference input values in commands.
+```typescript
+{
+  name: 'Deploy',
+  type: 'command',
+  value: 'npm run deploy',
+  dependsOn: ['Build', 'Test'], // Tasks to run before
+  taskRunMode: 'serial'         // 'serial' or 'parallel'
+}
+```
 
-### Custom Banner and Menu Groups
-Displays a customizable banner and formatted menu groups for better terminal output.
+## 🛠️ CLI Options
 
-## License
+```bash
+menuify [options]
+
+Options:
+  -v, --version        Show version
+  -f, --file <path>    Custom config file
+  -h, --help          Show help
+  init                Initialize config file
+```
+
+## 🔍 Key Features
+
+- **Advanced Task System**
+  - Task dependencies management
+  - Serial/Parallel execution modes
+  - Custom function support
+
+- **Rich Input Types**
+  - String prompts
+  - Single/Multiple selection
+  - Confirmations
+
+- **Environment Support**
+  - Environment variables configuration
+  - Working directory customization
+
+- **Flexible Configuration**
+  - TypeScript/JavaScript/JSON support
+  - Multiple command execution
+  - Custom function integration
+
+## 👤 Author
+
+baiawxk <baiawxk@qq.com>
+
+## 📄 License
 
 MIT
+
+## 🔗 Links
+
+- [GitHub Repository](https://github.com/baiawxk/cli-menu)
+- [Issue Tracker](https://github.com/baiawxk/cli-menu/issues)

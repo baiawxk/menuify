@@ -1,233 +1,179 @@
-import type { MenuItem, TaskInput, MenuOpts } from './core'
-import { input, search, confirm, checkbox } from '@inquirer/prompts'
+import type { MenuItem, MenuOpts, TaskInput } from './core'
+import type { ExecutionContext } from './taskExecutor'
 import { execa } from 'execa'
+import { Listr } from 'listr2'
 import open from 'open'
 
-interface ProcessedInputs {
-  [key: string]: string
-}
+import { InquirerAdapter } from './adapters/inquirerAdapter'
+import { DependencyResolver } from './dependencyResolver'
+import { executeMenus } from './taskExecutor'
 
 export class TaskRunner {
-  private runningTasks = new Map<string, { process: any, status: 'running' | 'completed' | 'failed' }>()
-  private menuConfig: MenuOpts | undefined
+  private menuConfig: MenuOpts
+  private inquirerAdapter: InquirerAdapter
+  private context: ExecutionContext
+  private dependencyResolver: DependencyResolver
 
-  setConfig(config: MenuOpts) {
-    this.menuConfig = config
+  constructor(config?: MenuOpts) {
+    this.menuConfig = config || {}
+    this.inquirerAdapter = InquirerAdapter.createRenderer([])
+    this.context = {
+      env: {},
+      menuEnv: {},
+      inputs: undefined,
+      taskStatuses: new Map(),
+    }
+    // Initialize with empty array to allow executing individual tasks
+    this.dependencyResolver = new DependencyResolver([])
   }
 
-  async processMenu(menu: MenuItem): Promise<void> {
-    const { type, value } = menu
-
-    // Handle task dependencies first
-    if (menu.dependsOn?.length) {
-      for (const depName of menu.dependsOn) {
-        const depTask = await this.findTaskByName(depName)
-        if (depTask)
-          await this.processMenu(depTask)
-      }
-    }
-
-    if (type === 'link') {
-      if (typeof value === 'string') {
-        open(value)
-      }
-      else {
-        console.error('Link type menu items must have a string value')
-      }
-    }
-    else if (type === 'command') {
-      try {
-        await this.executeTask(menu)
-      }
-      catch (error) {
-        console.error(`Failed to execute task: ${menu.name}`)
-        throw error
-      }
-    }
-    else if (type === 'function') {
-      if (typeof value !== 'function') {
-        console.error('Function type menu items must have a function value')
-        return
-      }
-      try {
-        const inputs = menu.inputs ? await this.processInputs(menu.inputs) : undefined
-        await value(inputs)
-      }
-      catch (error) {
-        console.error(`Failed to execute function: ${menu.name}`)
-        throw error
-      }
-    }
+  /**
+   * Get the status of a task
+   */
+  getTaskStatus(taskName: string): string {
+    return this.context.taskStatuses?.get(taskName) || 'pending'
   }
 
-  async executeTask(task: MenuItem, inputs?: ProcessedInputs): Promise<void> {
-    if (task.type !== 'command')
-      return
+  /**
+   * Find a task by name
+   */
+  async findTaskByName(name: string): Promise<MenuItem | undefined> {
+    return this.dependencyResolver.findMenu(name)
+  }
 
-    // Handle task dependencies
-    if (task.dependsOn?.length) {
-      for (const depName of task.dependsOn) {
-        const depTask = await this.findTaskByName(depName)
-        if (depTask)
-          await this.executeTask(depTask, inputs)
-      }
-    }
-
-    // Process task inputs if needed
-    const processedInputs = await this.processInputs(task.inputs)
-    const finalInputs = { ...inputs, ...processedInputs }
-
-    // Check if any confirm inputs returned false
-    if (Object.values(finalInputs).includes('false')) {
-      console.log('Task cancelled by user')
-      return
-    }
-
-    // Process options if they exist
-    const processedOptions = { ...task.options }
-
+  /**
+   * Execute a single task
+   */
+  async executeTask(task: MenuItem): Promise<void> {
     try {
-      if (Array.isArray(task.value)) {
-        const commands = task.value.map(cmd => this.replaceInputVariables(cmd, finalInputs))
-        
-        if (task.runMode === 'parallel') {
-          // Run commands in parallel
-          const processes = commands.map(cmd => 
-            execa(cmd, {
-              stdio: 'inherit',
-              shell: true,
-              ...processedOptions,
-            })
-          )
-          this.runningTasks.set(task.name, { process: processes, status: 'running' })
-          await Promise.all(processes)
-        } else {
-          // Run commands sequentially (default behavior)
-          for (const cmd of commands) {
-            const process = execa(cmd, {
-              stdio: 'inherit',
-              shell: true,
-              ...processedOptions,
-            })
-            this.runningTasks.set(task.name, { process, status: 'running' })
-            await process
+      // Handle dependencies first
+      if (task.dependsOn?.length) {
+        for (const depName of task.dependsOn) {
+          const depTask = await this.findTaskByName(depName)
+          if (!depTask) {
+            throw new Error(`Dependency not found: ${depName}`)
+          }
+          // Only execute if not already completed
+          if (this.getTaskStatus(depName) !== 'completed') {
+            await this.executeTask(depTask)
           }
         }
-      } else {
-        // Handle single command
-        const command = this.replaceInputVariables(task.value, finalInputs)
-        const process = execa(command, {
-          stdio: 'inherit',
-          shell: true,
-          ...processedOptions,
-        })
-        this.runningTasks.set(task.name, { process, status: 'running' })
-        await process
       }
 
-      this.runningTasks.set(task.name, { process: null, status: 'completed' })
+      // Mark task as running
+      this.context.taskStatuses?.set(task.name, 'running')
+
+      // Process inputs if available
+      if (task.inputs?.length) {
+        this.context.inputs = {}
+        for (const input of task.inputs) {
+          const value = await this.inquirerAdapter.processInput(input)
+          if (value !== undefined) {
+            this.context.inputs[input.id] = value
+          }
+        }
+      }
+
+      // Execute the task
+      await executeMenus([task], {
+        context: this.context,
+        taskRunMode: task.taskRunMode || 'serial',
+      })
+
+      // Mark task as completed
+      this.context.taskStatuses?.set(task.name, 'completed')
     }
     catch (error) {
-      this.runningTasks.set(task.name, { process: null, status: 'failed' })
+      this.context.taskStatuses?.set(task.name, 'failed')
       throw error
     }
   }
 
-  private replaceInputVariables(command: string, inputs: ProcessedInputs): string {
-    let result = command
-    Object.entries(inputs || {}).forEach(([key, value]) => {
-      result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value)
-    })
-    return result
-  }
+  /**
+   * Process a menu item
+   */
+  async processMenu(menu: MenuItem): Promise<void> {
+    // Reset inputs for each menu execution
+    this.context.inputs = undefined
 
-  public async processInputs(inputs?: TaskInput[]): Promise<ProcessedInputs> {
-    if (!inputs?.length)
-      return {}
-
-    const result: ProcessedInputs = {}
-
-    for (const input of inputs) {
-      switch (input.type) {
-        case 'promptString':
-          result[input.id] = await this.promptString(input)
-          break
-        case 'pickString':
-          result[input.id] = await this.pickString(input)
-          break
-        case 'confirm':
-          result[input.id] = await this.confirmInput(input)
-          break
-        case 'multiSelect':
-          result[input.id] = await this.multiSelect(input)
-          break
+    // Process inputs if available
+    if (menu.inputs?.length) {
+      const inputs: Record<string, unknown> = {}
+      for (const input of menu.inputs) {
+        const value = await this.inquirerAdapter.processInput(input)
+        if (value !== undefined) {
+          inputs[input.id] = value
+        }
+      }
+      // Only set inputs if we collected any values
+      if (Object.keys(inputs).length > 0) {
+        this.context.inputs = inputs
       }
     }
 
-    return result
+    // Execute based on menu type
+    if (menu.type === 'function') {
+      // For function type, only pass the inputs
+      await menu.value(this.context.inputs)
+    }
+    else {
+      await this.executeTask(menu)
+    }
   }
 
-  private async promptString(taskInput: TaskInput): Promise<string> {
-    const result = await input({
-      message: taskInput.description || `Enter value for ${taskInput.id}`,
-      default: taskInput.default,
+  /**
+   * Execute a list of menus
+   */
+  async executeMenus(menus: MenuItem[], runMode: 'serial' | 'parallel' = 'serial'): Promise<void> {
+    await executeMenus(menus, {
+      context: this.context,
+      runMode,
+      taskRunMode: 'serial',
     })
-    return result || ''
   }
 
-  private async pickString(taskInput: TaskInput): Promise<string> {
-    if (!taskInput.options?.length)
-      return taskInput.default || ''
-
-    const result = await search<string>({
-      message: taskInput.description || `Select value for ${taskInput.id}`,
-      source: async (term) => {
-        if (!term)
-          return taskInput.options || []
-        return taskInput.options?.filter(opt =>
-          opt.toLowerCase().includes(term.toLowerCase()),
-        ) || []
+  /**
+   * Create a task list with Listr2
+   */
+  static createTaskList(menu: MenuItem, tasks: Array<() => Promise<void>>, context: ExecutionContext): Listr {
+    const taskWrappers = tasks.map((task, index) => ({
+      title: `Task ${index + 1}`,
+      task: async () => {
+        await task()
       },
+    }))
+
+    return new Listr(taskWrappers, {
+      concurrent: menu.taskRunMode === 'parallel',
+      exitOnError: false,
+      renderer: InquirerAdapter,
     })
-    return result || taskInput.default || ''
   }
 
-  private async confirmInput(taskInput: TaskInput): Promise<string> {
-    const result = await confirm({
-      message: taskInput.description || `Confirm ${taskInput.id}?`,
-      default: taskInput.default === 'true',
+  /**
+   * Execute tasks with proper run mode
+   */
+  static async executeTasks(menu: MenuItem, tasks: Array<() => Promise<void>>, context: ExecutionContext): Promise<void> {
+    const taskList = TaskRunner.createTaskList(menu, tasks, context)
+    await taskList.run()
+  }
+
+  /**
+   * Create a menu task list with proper run mode
+   */
+  static createMenuTaskList(menus: MenuItem[], runMode: 'serial' | 'parallel'): Listr {
+    const menuWrappers = menus.map(menu => ({
+      title: menu.name,
+      task: async () => {
+        const taskList = TaskRunner.createTaskList(menu, menu.tasks || [], { env: {}, menuEnv: {} })
+        return taskList
+      },
+    }))
+
+    return new Listr(menuWrappers, {
+      concurrent: runMode === 'parallel',
+      exitOnError: false,
+      renderer: InquirerAdapter,
     })
-    return result.toString()
-  }
-
-  private async multiSelect(taskInput: TaskInput): Promise<string> {
-    if (!taskInput.options?.length)
-      return ''
-
-    const choices = taskInput.options.map(opt => ({ value: opt }))
-    const message = taskInput.description || `Select values for ${taskInput.id}`
-    
-    const selected = await checkbox({
-      message,
-      choices,
-      pageSize: 15
-    })
-    
-    return selected.join(taskInput.joinSymbol || ',')
-  }
-
-  public async findTaskByName(name: string): Promise<MenuItem | undefined> {
-    if (!this.menuConfig) return undefined
-    return this.menuConfig.menus.find(menu => menu.name === name)
-  }
-
-  getTaskStatus(taskName: string) {
-    return this.runningTasks.get(taskName)?.status || 'not-started'
-  }
-
-  async stopTask(taskName: string): Promise<void> {
-    const task = this.runningTasks.get(taskName)
-    if (task?.process)
-      await task.process.kill()
   }
 }

@@ -1,3 +1,4 @@
+import type { EnvResolverOptions } from './envResolver'
 import fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
@@ -6,54 +7,42 @@ import { confirm, search } from '@inquirer/prompts'
 import { loadConfig } from 'unconfig'
 import { TaskRunner } from './taskRunner'
 
-export async function defineMenu(opts: MenuOpts): Promise<MenuOpts> {
-  return opts
-}
+export type TaskRunMode = 'serial' | 'parallel'
+export type RunMode = 'serial' | 'parallel'
 
-export interface MenuOpts {
-  menus: MenuItem[]
-}
+export type TaskInputType = 'promptString' | 'pickString' | 'confirm' | 'multiSelect'
 
 export interface TaskInput {
   id: string
-  type: 'promptString' | 'pickString' | 'confirm' | 'multiSelect'
+  type: TaskInputType
   description?: string
   default?: string
   options?: string[]
   joinSymbol?: string
 }
 
-export interface BaseMenu {
+export type MenuType = 'command' | 'link' | 'function'
+export type MenuValue = string | string[] | ((inputs?: Record<string, unknown>) => Promise<void>)
+
+export interface MenuItem {
   name: string
-  description?: string
-  children?: MenuItem[]
-  group?: string
-  dependsOn?: string[]
+  type: MenuType
+  value: MenuValue
   inputs?: TaskInput[]
+  dependsOn?: string[]
+  confirmMsg?: string
+  taskRunMode?: TaskRunMode
+  tasks?: Array<() => Promise<void>>
 }
 
-export interface CommandMenu extends BaseMenu {
-  type: 'command'
-  value: string | string[]
-  runMode?: 'sequential' | 'parallel'
-  options?: {
-    cwd?: string
-  }
+export interface MenuOpts {
+  menus?: MenuItem[]
+  env?: EnvResolverOptions
 }
 
-export interface LinkMenu extends BaseMenu {
-  type: 'link'
-  value: string
+export async function defineMenu(opts: MenuOpts): Promise<MenuOpts> {
+  return opts
 }
-
-export interface FunctionMenu extends BaseMenu {
-  type: 'function'
-  value: (inputs?: Record<string, string>) => Promise<void>
-}
-
-export type MenuItem = CommandMenu | LinkMenu | FunctionMenu
-
-const taskRunner = new TaskRunner()
 
 export async function displayMenu(file?: string): Promise<void> {
   const { config, sources } = await resolveConfig(file)
@@ -66,8 +55,7 @@ export async function displayMenu(file?: string): Promise<void> {
     await createSampleConfig()
     return
   }
-
-  taskRunner.setConfig(config)
+  const taskRunner = new TaskRunner(config)
   const menu = await searchMenu(config)
   await taskRunner.processMenu(menu)
 }
@@ -102,7 +90,7 @@ async function createSampleConfig() {
   }
 }
 
-async function resolveConfig(file: string | undefined) {
+export async function resolveConfig(file: string | undefined) {
   if (file && !fs.existsSync(file)) {
     console.error(`config file ${file} not found`)
     process.exit(1)
@@ -120,13 +108,13 @@ async function resolveConfig(file: string | undefined) {
 }
 
 function getMenu(config: MenuOpts) {
-  return config.menus.map((m) => {
+  return config.menus?.map((m) => {
     const { name } = m
     return {
       name,
       value: m,
     }
-  })
+  }) || []
 }
 
 export function initConfig() {
