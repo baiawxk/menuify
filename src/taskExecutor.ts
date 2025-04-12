@@ -148,19 +148,20 @@ async function executeTask(task: () => Promise<void>, context: ExecutionContext)
 
 /**
  * Resolves variables in a string using context
+ * Priority: menuEnv > env > inputs
  */
 function resolveVariables(value: string, context: ExecutionContext): string {
   let result = value
 
-  // Replace global env variables
+  // First replace global env variables
   for (const [key, val] of Object.entries(context.env))
     result = result.replace(new RegExp(`%${key}%`, 'g'), val)
 
-  // Replace menu env variables
+  // Then replace menu env variables (taking precedence over global)
   for (const [key, val] of Object.entries(context.menuEnv))
-    result = result.replace(new RegExp(`{${key}}`, 'g'), val)
+    result = result.replace(new RegExp(`%${key}%`, 'g'), val)
 
-  // Replace input variables
+  // Finally replace input variables (using different pattern)
   for (const [key, val] of Object.entries(context.inputs || {}))
     result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), String(val))
 
