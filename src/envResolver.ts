@@ -8,9 +8,9 @@ export interface EnvResolverOptions {
 }
 
 export class EnvResolver {
-  private globalEnv: Record<string, string>
-  private menuEnv: Record<string, string>
-  private inputs: Record<string, unknown>
+  private readonly globalEnv: Record<string, string>
+  private readonly menuEnv: Record<string, string>
+  private readonly inputs: Record<string, unknown>
 
   constructor(options: EnvResolverOptions = {}) {
     this.globalEnv = options.globalEnv || {}
@@ -18,110 +18,108 @@ export class EnvResolver {
     this.inputs = options.inputs || {}
   }
 
-  /**
-   * Resolves environment variables in a menu item's value
-   */
   resolveMenu<T extends MenuItem>(menu: T): T {
     if (menu.task === undefined)
-      throw new Error(`Menu ${menu.name} has no value`)
-
-    const resolvedValue = this.resolveValue(menu.task)
+      throw new Error(`Menu "${menu.name}" has no task defined`)
 
     return {
       ...menu,
-      task: resolvedValue,
+      task: this.resolveValue(menu.task),
     }
   }
 
-  /**
-   * Resolves a menu value which can be a string, string array, or function
-   */
   private resolveValue(value: TaskValue): TaskValue {
     if (typeof value === 'function')
       return value
-    return this.resolve(value)
+
+    return Array.isArray(value)
+      ? value.map(v => this.resolveString(v))
+      : this.resolveString(value)
   }
 
-  /**
-   * Resolves a single value (string or array of strings)
-   */
   resolve(value: string | string[]): string | string[] {
     try {
-      if (Array.isArray(value))
-        return value.map(v => this.resolveString(v))
-      return this.resolveString(value)
+      return Array.isArray(value)
+        ? value.map(v => this.resolveString(v))
+        : this.resolveString(value)
     }
     catch (error) {
       if (error instanceof Error)
-        throw new TypeError(`Failed to resolve variables: ${error.message}`)
+        throw new Error(`Failed to resolve variables: ${error.message}`)
       throw error
     }
   }
 
-  /**
-   * Validates if a value needs variable resolution
-   */
-  private needsResolution(value: string): boolean {
-    return typeof value === 'string' 
-      && /(\$\{[\w-]+\}|\{[\w-]+\}|%[\w-]+%)/.test(value)
-  }
-
-  /**
-   * Resolves variables in a string with proper priority:
-   * 1. Input variables (highest priority)
-   * 2. Menu-level variables
-   * 3. Global variables (lowest priority)
-   */
   private resolveString(value: string): string {
     if (typeof value !== 'string')
       throw new TypeError('Value must be a string')
 
-    if (!this.needsResolution(value))
+    // Skip resolution if no variables present
+    if (!this.containsVariables(value))
       return value
 
+    // Resolve variables in order of precedence
     let result = value
-
-    // Replace variables in order of precedence, with each type only accessing its own scope
-    // 1. Input variables (${var})
-    result = this.replaceVariables(result, this.inputs, '${', '}')
-
-    // 2. Menu variables ({var})
-    result = this.replaceVariables(result, this.menuEnv, '{', '}')
-
-    // 3. Global variables (%var%)
-    result = this.replaceVariables(result, this.globalEnv, '%', '%')
+    result = this.processInputVariables(result)
+    result = this.processMenuVariables(result)
+    result = this.processGlobalVariables(result)
 
     // Check for any unresolved variables
-    const unresolved = this.findUnresolvedVariables(result)
-    if (unresolved.length > 0)
-      throw new Error(`Unresolved variables: ${unresolved.join(', ')}`)
+    this.validateNoUnresolvedVariables(result)
 
     return result
   }
 
-  /**
-   * Replace variables in a string with values from a record
-   */
+  private containsVariables(value: string): boolean {
+    return /(\$\{[\w-]+\}|\{[\w-]+\}|%[\w-]+%)/.test(value)
+  }
+
+  private processInputVariables(value: string): string {
+    return this.replaceVariables(value, this.inputs, '${', '}')
+  }
+
+  private processMenuVariables(value: string): string {
+    return this.replaceVariables(value, this.menuEnv, '{', '}')
+  }
+
+  private processGlobalVariables(value: string): string {
+    return this.replaceVariables(value, this.globalEnv, '%', '%')
+  }
+
   private replaceVariables(
     str: string,
     values: Record<string, unknown>,
     prefix: string,
     suffix: string,
   ): string {
-    const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const escapedSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const pattern = new RegExp(`${escapedPrefix}([\\w-]+)${escapedSuffix}`, 'g')
-
+    const pattern = this.createVariablePattern(prefix, suffix)
     return str.replace(pattern, (match, key) => {
-      const val = values[key]
-      // Only replace if the value exists
-      return val !== undefined ? String(val) : match
+      const value = values[key]
+      return value !== undefined ? String(value) : match
     })
   }
 
-  /**
-   * Find any unresolved variables in the string
-   */
+  private createVariablePattern(prefix: string, suffix: string): RegExp {
+    const escapedPrefix = this.escapeRegExp(prefix)
+    const escapedSuffix = this.escapeRegExp(suffix)
+    return new RegExp(`${escapedPrefix}([\\w-]+)${escapedSuffix}`, 'g')
+  }
+
+  private escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  private validateNoUnresolvedVariables(str: string): void {
+    const unresolved = this.findUnresolvedVariables(str)
+    if (unresolved.length > 0) {
+      throw new Error(
+        'Unresolved variables found: ' +
+        `${unresolved.join(', ')}\n` +
+        'Make sure all required variables are defined in the appropriate scope.',
+      )
+    }
+  }
+
   private findUnresolvedVariables(str: string): string[] {
     const patterns = [
       /\$\{([\w-]+)\}/g, // Input variables
@@ -132,17 +130,13 @@ export class EnvResolver {
     const unresolved = new Set<string>()
     for (const pattern of patterns) {
       let match
-      while ((match = pattern.exec(str)) !== null) {
+      while ((match = pattern.exec(str)) !== null)
         unresolved.add(match[1])
-      }
     }
 
     return Array.from(unresolved)
   }
 
-  /**
-   * Creates a context object for task execution
-   */
   createContext(): ExecutionContext {
     return {
       env: { ...this.globalEnv },
@@ -152,14 +146,14 @@ export class EnvResolver {
   }
 
   setInputs(inputs: Record<string, unknown>): void {
-    this.inputs = { ...inputs }
+    Object.assign(this.inputs, inputs)
   }
 
   setMenuEnv(menuEnv: Record<string, string>): void {
-    this.menuEnv = { ...menuEnv }
+    Object.assign(this.menuEnv, menuEnv)
   }
 
   setGlobalEnv(globalEnv: Record<string, string>): void {
-    this.globalEnv = { ...globalEnv }
+    Object.assign(this.globalEnv, globalEnv)
   }
 }

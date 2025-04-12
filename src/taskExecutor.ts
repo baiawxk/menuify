@@ -1,4 +1,4 @@
-import type { MenuItem } from './core'
+import type { MenuItem, TaskStatus } from './core'
 import { Listr } from 'listr2'
 import { EnvResolver } from './envResolver'
 import { TaskHandler } from './handlers/taskHandler'
@@ -7,7 +7,7 @@ export interface ExecutionContext {
   env: Record<string, string>
   menuEnv: Record<string, string>
   inputs?: Record<string, unknown>
-  taskStatuses?: Map<string, string>
+  taskStatuses?: Map<string, TaskStatus>
   debug?: boolean
 }
 
