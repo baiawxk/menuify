@@ -97,7 +97,7 @@ export async function displayMenu(file?: string): Promise<void> {
 }
 
 async function searchMenu(config: CliConfig) {
-  return await search<MenuItem>({
+  const menu = await search<MenuItem>({
     message: 'Select a command to run',
     pageSize: 15,
     source: (input) => {
@@ -110,6 +110,8 @@ async function searchMenu(config: CliConfig) {
       return choices
     },
   })
+  console.log('🚀 ~ searchMenu ~ menu:', menu)
+  return menu
 }
 
 async function createSampleConfig() {

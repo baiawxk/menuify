@@ -16,6 +16,7 @@ export class EnvResolver {
     this.globalEnv = options.globalEnv || {}
     this.menuEnv = options.menuEnv || {}
     this.inputs = options.inputs || {}
+    console.log('🚀 ~ EnvResolver ~ constructor ~ options:', options)
   }
 
   resolveMenu<T extends MenuItem>(menu: T): T {
@@ -71,7 +72,7 @@ export class EnvResolver {
   }
 
   private containsVariables(value: string): boolean {
-    return /(\$\{[\w-]+\}|\{[\w-]+\}|%[\w-]+%)/.test(value)
+    return /(\$\{[\w-]+\}|%[\w-]+%)/.test(value)
   }
 
   private processInputVariables(value: string): string {
@@ -79,7 +80,7 @@ export class EnvResolver {
   }
 
   private processMenuVariables(value: string): string {
-    return this.replaceVariables(value, this.menuEnv, '{', '}')
+    return this.replaceVariables(value, this.menuEnv, '%', '%')
   }
 
   private processGlobalVariables(value: string): string {
@@ -113,9 +114,9 @@ export class EnvResolver {
     const unresolved = this.findUnresolvedVariables(str)
     if (unresolved.length > 0) {
       throw new Error(
-        'Unresolved variables found: ' +
-        `${unresolved.join(', ')}\n` +
-        'Make sure all required variables are defined in the appropriate scope.',
+        'Unresolved variables found: '
+        + `${unresolved.join(', ')}\n`
+        + 'Make sure all required variables are defined in the appropriate scope.',
       )
     }
   }
@@ -123,8 +124,7 @@ export class EnvResolver {
   private findUnresolvedVariables(str: string): string[] {
     const patterns = [
       /\$\{([\w-]+)\}/g, // Input variables
-      /\{([\w-]+)\}/g,   // Menu variables
-      /%([\w-]+)%/g,     // Global variables
+      /%([\w-]+)%/g, // Global variables
     ]
 
     const unresolved = new Set<string>()

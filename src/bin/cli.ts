@@ -8,15 +8,14 @@ setupCli()
 catchExitException()
 
 function catchExitException() {
-  process.on('uncaughtException', (_error) => {
-    console.clear()
-    // if (error instanceof Error && error.name === 'ExitPromptError') {
-    //   console.clear()
-    // }
-    // else {
-    //   // Rethrow unknown errors
-    //   throw error
-    // }
+  process.on('uncaughtException', (error) => {
+    if (error instanceof Error && error.name === 'ExitPromptError') {
+      console.clear()
+    }
+    else {
+      // Rethrow unknown errors
+      throw error
+    }
   })
 }
 

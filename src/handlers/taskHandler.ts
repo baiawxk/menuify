@@ -36,7 +36,7 @@ export class TaskHandler {
           await this.executeFunction(menu.task, context)
           break
         default:
-          throw new Error(`Unsupported menu type: ${menu.type}`)
+          throw new Error(`Unsupported menu type: ${menu}`)
       }
 
       if (context.debug)
@@ -73,7 +73,7 @@ export class TaskHandler {
 
     if (typeof url !== 'string')
       throw new TypeError('Link URL must be a string')
-    
+
     const resolvedUrl = this.envResolver.resolve(url) as string
     await open(resolvedUrl)
   }
