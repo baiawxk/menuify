@@ -7,7 +7,6 @@ import { confirm, search } from '@inquirer/prompts'
 import { loadConfig } from 'unconfig'
 import { TaskRunner } from './taskRunner'
 
-export type TaskRunMode = 'serial' | 'parallel'
 export type RunMode = 'serial' | 'parallel'
 
 export type TaskInputType = 'promptString' | 'pickString' | 'confirm' | 'multiSelect'
@@ -37,7 +36,7 @@ export interface MenuItem {
   inputs?: TaskInput[]
   dependsOn?: string[]
   confirmMsg?: string
-  taskRunMode?: TaskRunMode
+  taskRunMode?: RunMode
   tasks?: Array<() => Promise<void>>
   env?: Record<string, string> // Add menu-level environment variables
   description?: string

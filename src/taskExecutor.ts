@@ -175,7 +175,7 @@ export async function executeMenuItem(menu: MenuItem, options: { envResolver?: a
   if (menu.type === 'command') {
     const value = Array.isArray(menu.value) ? menu.value.join(' && ') : menu.value as string
     const command = options.envResolver ? options.envResolver.resolve(value) : value
-    return await execa(command, { stdio: 'inherit', shell: true })
+     await execa(command, { stdio: 'inherit', shell: true })
   }
   else if (menu.type === 'link') {
     const url = options.envResolver ? options.envResolver.resolve(menu.value as string) : menu.value as string
