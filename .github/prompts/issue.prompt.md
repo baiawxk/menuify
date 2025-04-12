@@ -7,9 +7,9 @@
   - 添加debug配置的单元测试
   - 更新测试和示例配置文件
   - 完成时间: 2025-04-12 18:28:07
+- [x] menuItem.confirmMsg 如果填入值的时候，代表需要使用inquirer的confirm提示，确认之后才执行
 
 - [ ] 整理现在代码中的逻辑，尽量保持逻辑简单，代码清晰，要有适当的封装和设计
-- [ ] menuItem.confirmMsg 如果填入值的时候，代表需要使用inquirer的confirm提示，确认之后才执行
 - [ ] when use functionMenu,all the inputs should be true type . and the env vars keep string type
 - [ ] dependsOn not work
 - [ ] 集成Listr2 ，然后inquirer按照Listr2的规范进行修改，使用他提供的适配器

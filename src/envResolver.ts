@@ -54,7 +54,7 @@ export class EnvResolver {
 
   private resolveString(value: string): string {
     if (typeof value !== 'string')
-      throw new TypeError('Value must be a string')
+      throw new TypeError(`Value must be a string, but got: ${typeof value}`)
 
     // Skip resolution if no variables present
     if (!this.containsVariables(value))
