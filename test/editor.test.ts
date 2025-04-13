@@ -12,7 +12,7 @@ vi.mock('../src/core', () => ({
   })),
 }))
 
-describe.skip('editor', () => {
+describe('editor', () => {
   const mockSpawn = {
     on: vi.fn(),
     stdout: { pipe: vi.fn() },
@@ -26,57 +26,67 @@ describe.skip('editor', () => {
     process.env.EDITOR = undefined
   })
 
-  it('should use notepad on Windows', async () => {
-    Object.defineProperty(process, 'platform', { value: 'win32' })
+  describe('editor selection', () => {
+    it('should use specified editor when provided', async () => {
+      await editConfig({ editor: 'code' })
+      expect(spawn).toHaveBeenCalledWith('code', ['--wait', '/path/to/config.ts'], expect.any(Object))
+    })
 
-    await editConfig()
-    expect(spawn).toHaveBeenCalledWith('notepad', ['/path/to/config.ts'], {
-      stdio: 'inherit',
-      shell: true,
+    it('should use process.env.EDITOR when no editor specified', async () => {
+      process.env.EDITOR = 'nano'
+      await editConfig({})
+      expect(spawn).toHaveBeenCalledWith('nano', ['/path/to/config.ts'], expect.any(Object))
+    })
+
+    it('should use platform-specific default when no editor specified', async () => {
+      const originalPlatform = process.platform
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+
+      await editConfig({})
+      expect(spawn).toHaveBeenCalledWith('notepad', ['/path/to/config.ts'], expect.any(Object))
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform })
     })
   })
 
-  it('should use vi on non-Windows platforms', async () => {
-    Object.defineProperty(process, 'platform', { value: 'linux' })
+  describe('editor command mapping', () => {
+    it('should map sublime text command correctly on Windows', async () => {
+      const originalPlatform = process.platform
+      Object.defineProperty(process, 'platform', { value: 'win32' })
 
-    await editConfig()
-    expect(spawn).toHaveBeenCalledWith('vi', ['/path/to/config.ts'], {
-      stdio: 'inherit',
-      shell: true,
+      await editConfig({ editor: 'sublime' })
+      expect(spawn).toHaveBeenCalledWith('subl', ['--wait', '/path/to/config.ts'], expect.any(Object))
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform })
+    })
+
+    it('should map VSCode command with correct arguments', async () => {
+      await editConfig({ editor: 'code' })
+      expect(spawn).toHaveBeenCalledWith('code', ['--wait', '/path/to/config.ts'], expect.any(Object))
     })
   })
 
-  it('should use EDITOR environment variable if set', async () => {
-    process.env.EDITOR = 'code'
+  describe('error handling', () => {
+    it('should throw error when editor not found', async () => {
+      mockSpawn.on.mockImplementation((event, cb) => {
+        if (event === 'error')
+          cb(new Error('ENOENT'))
+      })
 
-    await editConfig()
-    expect(spawn).toHaveBeenCalledWith('code', ['/path/to/config.ts'], {
-      stdio: 'inherit',
-      shell: true,
-    })
-  })
-
-  it('should throw error if editor exits with non-zero code', async () => {
-    mockSpawn.on.mockImplementation((event, cb) => {
-      if (event === 'exit')
-        cb(1)
+      await expect(editConfig({ editor: 'nonexistent' }))
+        .rejects
+        .toThrow('Editor "nonexistent" not found')
     })
 
-    await expect(editConfig()).rejects.toThrow('Editor exited with code 1')
-  })
+    it('should handle non-zero exit codes', async () => {
+      mockSpawn.on.mockImplementation((event, cb) => {
+        if (event === 'exit')
+          cb(1)
+      })
 
-  it('should throw error if editor process fails', async () => {
-    mockSpawn.on.mockImplementation((event, cb) => {
-      if (event === 'error')
-        cb(new Error('Process failed'))
+      await expect(editConfig({ editor: 'vim' }))
+        .rejects
+        .toThrow('Editor exited with code 1')
     })
-
-    await expect(editConfig()).rejects.toThrow('Process failed')
-  })
-
-  it('should throw error if config file not found', async () => {
-    vi.mocked(existsSync).mockReturnValue(false)
-
-    await expect(editConfig('nonexistent')).rejects.toThrow('No config file found')
   })
 })

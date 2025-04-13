@@ -45,9 +45,11 @@ function setupCli(): void {
       initConfig({ type })
     })
 
-  cli.command('edit [config]', 'config file to edit, if not pass, will find config file in current directory')
-    .action((config) => {
-      editConfig(config)
+  cli.command('edit', 'edit config file')
+    .option('-c, --config <config>', 'config file to edit')
+    .option('-e, --editor <editor>', 'editor to use (vim|nano|notepad|code|sublime|atom)')
+    .action(({ config, editor }) => {
+      editConfig({ config, editor })
     })
 
   cli.command('gen <name>', 'generate shell scripts')
