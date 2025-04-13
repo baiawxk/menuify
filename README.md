@@ -6,7 +6,7 @@
 
 ## ✨ Features
 
-- � Interactive CLI menu with fuzzy search
+- 😊 Interactive CLI menu with fuzzy search
 - 🔧 Auto config loading via `unconfig`
 - 💻 Execute commands, open links, or run custom functions
 - 📝 Rich input types support (prompt, pick, confirm, multi-select)
