@@ -13,8 +13,20 @@ export default defineBuildConfig({
   },
   hooks: {
     'build:done': () => {
+      // Create template directory
       fs.mkdirSync('./dist/tmpl', { recursive: true })
-      fs.copyFileSync('./src/tmpl/cli.config.json', './dist/tmpl/cli.config.json')
+
+      // Copy all config templates
+      const templates = [
+        'cli.config.json',
+        'cli.config.ts',
+        'cli.config.mjs',
+        'cli.config.cjs'
+      ]
+
+      for (const template of templates) {
+        fs.copyFileSync(`./src/tmpl/${template}`, `./dist/tmpl/${template}`)
+      }
     },
   },
 })

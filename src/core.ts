@@ -187,7 +187,7 @@ function getMenu(config: CliConfig) {
 }
 
 export interface InitCfgOpt {
-  type?: 'json' | 'ts' | 'js'
+  type?: 'mts' | 'cts' | 'ts' | 'mjs' | 'cjs' | 'js' | 'json'
 }
 
 export function initConfig(options: InitCfgOpt = {}): void {
@@ -195,14 +195,26 @@ export function initConfig(options: InitCfgOpt = {}): void {
   const tmplDir = resolve(currentFolder, './tmpl')
   const type = options.type || 'ts'
 
+  // Map file extensions to base template types
+  const templateMap: Record<string, string> = {
+    mts: 'ts',
+    cts: 'ts',
+    ts: 'ts',
+    mjs: 'mjs',
+    cjs: 'cjs',
+    js: 'mjs', // Use ESM by default for .js
+    json: 'json',
+  }
+
   // Validate config type
-  if (!['json', 'ts', 'js'].includes(type)) {
-    console.error('Invalid config type. Supported types: json, ts, js')
+  if (!Object.keys(templateMap).includes(type)) {
+    console.error(`Invalid config type. Supported types: ${Object.keys(templateMap).join(', ')}`)
     process.exit(1)
   }
 
   const configFileName = `cli.config.${type}`
-  const source = resolve(tmplDir, 'cli.config.json')
+  const baseTemplate = templateMap[type]
+  const source = resolve(tmplDir, `cli.config.${baseTemplate}`)
   const target = resolve(process.cwd(), configFileName)
 
   // Don't overwrite existing config
@@ -211,18 +223,26 @@ export function initConfig(options: InitCfgOpt = {}): void {
     process.exit(1)
   }
 
-  // For TS/JS, we need to convert the JSON template
+  // For non-JSON types, we need to adapt the module syntax
   if (type !== 'json') {
-    const jsonContent = fs.readFileSync(source, 'utf-8')
-    const config = JSON.parse(jsonContent)
-    const tsContent = `import { defineMenu } from 'menuify'
-
-export default defineMenu(${JSON.stringify(config, null, 2)})
-`
-    fs.writeFileSync(target, tsContent)
+    let content = fs.readFileSync(source, 'utf-8')
+    
+    // Handle TypeScript variants
+    if (['mts', 'cts', 'ts'].includes(type)) {
+      // Template is already in TypeScript format
+      fs.writeFileSync(target, content)
+    }
+    // Handle JavaScript variants
+    else {
+      // Remove TypeScript-specific syntax if present
+      content = content.replace(/: \w+(?=,|\s|$)/g, '')
+      fs.writeFileSync(target, content)
+    }
   }
   else {
-    fs.copyFileSync(source, target)
+    // For JSON, use the JSON template directly
+    const jsonTemplate = resolve(tmplDir, 'cli.config.json')
+    fs.copyFileSync(jsonTemplate, target)
   }
 
   console.log(`Sample Config Created: ${target}`)
