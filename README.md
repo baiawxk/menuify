@@ -35,17 +35,17 @@ export default defineMenu({
     {
       name: 'Install Dependencies',
       type: 'command',
-      value: 'npm install'
+      task: 'npm install'
     },
     {
       name: 'Start Dev',
       type: 'command',
-      value: 'npm run dev'
+      task: 'npm run dev'
     },
     {
       name: 'Open Docs',
       type: 'link',
-      value: 'https://github.com/baiawxk/cli-menu'
+      task: 'https://github.com/baiawxk/cli-menu'
     }
   ]
 })
@@ -73,7 +73,7 @@ export default defineMenu({
     {
       name: 'Build Project',
       type: 'command',
-      value: 'npm run build',
+      task: 'npm run build',
       inputs: [
         {
           id: 'env',
@@ -94,7 +94,7 @@ export default defineMenu({
     {
       name: 'Setup Project',
       type: 'command',
-      value: [
+      task: [
         'git init',
         'npm install',
         'npm run prepare'
@@ -104,9 +104,11 @@ export default defineMenu({
     {
       name: 'Custom Task',
       type: 'function',
-      value: async (inputs) => {
-        // Custom implementation
-        console.log('Running custom task...')
+      task: async (ctx) => {
+        // Custom implementation using context
+        console.log('Task inputs:', ctx.inputs)
+        console.log('Global env:', ctx.env)
+        console.log('Menu env:', ctx.menuEnv)
       }
     }
   ]
@@ -120,7 +122,7 @@ export default defineMenu({
 {
   name: string;              // Display name
   type: 'command';          // Menu type
-  value: string | string[]; // Single command or command array
+  task: string | string[]; // Single command or command array
   options?: {
     cwd?: string;          // Working directory
   }
@@ -132,16 +134,16 @@ export default defineMenu({
 {
   name: string;           // Display name
   type: 'link';          // Menu type
-  value: string;         // URL or file path
+  task: string;         // URL or file path
 }
 ```
 
 #### Function Menu
 ```typescript
 {
-  name: string;                                        // Display name
-  type: 'function';                                   // Menu type
-  value: (inputs?: Record<string, unknown>) => Promise<void>; // Custom function
+  name: string;                                     // Display name
+  type: 'function';                                // Menu type
+  task: (ctx: ExecutionContext) => Promise<void>;  // Custom function with context
 }
 ```
 
@@ -170,7 +172,7 @@ interface TaskInput {
 {
   name: 'Deploy',
   type: 'command',
-  value: 'npm run deploy',
+  task: 'npm run deploy',
   dependsOn: ['Build', 'Test'], // Tasks to run before
 }
 ```
@@ -180,11 +182,29 @@ interface TaskInput {
 ```bash
 menuify [options]
 
-Options:
-  -v, --version        Show version
-  -f, --file <path>    Custom config file
-  -h, --help          Show help
+Commands:
+  [config]             Run config specified in the command line
+    -n, --name        Run specific menu
+
+  run [name]          Run the menu directly 
+    -c, --config     Config file to use
+
   init                Initialize config file
+    -t, --type       Config file type (json|ts|js), ts is default
+
+  edit                Edit config file
+    -c, --config     Config file to edit
+    -e, --editor     Editor to use (vim|nano|notepad|code|sublime|atom)
+
+  gen                 Generate shell scripts
+    -f, --fileName   File name to generate script for  
+    -o, --outputDir  Output directory for generated scripts
+    -c, --config     Config file to generate script for
+    -t, --type       Type to generate script for (bash|cmd|ps1|fish|zsh), default: cmd
+
+Options:
+  -v, --version       Show version number 
+  -h, --help         Show help
 ```
 
 ## 🔍 Key Features
