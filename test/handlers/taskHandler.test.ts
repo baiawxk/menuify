@@ -38,6 +38,11 @@ describe('TaskHandler', () => {
       await taskHandler.executeMenuItem(menu, mockContext)
 
       expect(execa).toHaveBeenCalledWith('echo global', {
+        "cwd": undefined,
+        "env":  {
+          "GLOBAL_VAR": "global",
+          "MENU_VAR": "menu",
+        },
         shell: true,
         stdio: 'inherit',
       })
@@ -57,10 +62,20 @@ describe('TaskHandler', () => {
 
       expect(execa).toHaveBeenCalledTimes(2)
       expect(execa).toHaveBeenNthCalledWith(1, 'echo global', {
+        "cwd": undefined,
+        "env":  {
+          "GLOBAL_VAR": "global",
+          "MENU_VAR": "menu",
+        },
         shell: true,
         stdio: 'inherit',
       })
       expect(execa).toHaveBeenNthCalledWith(2, 'echo menu', {
+        "cwd": undefined,
+        "env":  {
+          "GLOBAL_VAR": "global",
+          "MENU_VAR": "menu",
+        },
         shell: true,
         stdio: 'inherit',
       })

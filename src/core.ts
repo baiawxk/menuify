@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -147,7 +147,7 @@ async function createSampleConfig() {
 }
 
 export async function resolveConfig(file?: string) {
-  if (file && !fs.existsSync(file)) {
+  if (file && !existsSync(file)) {
     console.error(`config file ${file} not found`)
     process.exit(1)
   }
@@ -218,31 +218,31 @@ export function initConfig(options: InitCfgOpt = {}): void {
   const target = resolve(process.cwd(), configFileName)
 
   // Don't overwrite existing config
-  if (fs.existsSync(target)) {
+  if (existsSync(target)) {
     console.error(`Config file ${configFileName} already exists`)
     process.exit(1)
   }
 
   // For non-JSON types, we need to adapt the module syntax
   if (type !== 'json') {
-    let content = fs.readFileSync(source, 'utf-8')
+    let content = readFileSync(source, 'utf-8')
     
     // Handle TypeScript variants
     if (['mts', 'cts', 'ts'].includes(type)) {
       // Template is already in TypeScript format
-      fs.writeFileSync(target, content)
+      writeFileSync(target, content)
     }
     // Handle JavaScript variants
     else {
       // Remove TypeScript-specific syntax if present
       content = content.replace(/: \w+(?=,|\s|$)/g, '')
-      fs.writeFileSync(target, content)
+      writeFileSync(target, content)
     }
   }
   else {
     // For JSON, use the JSON template directly
     const jsonTemplate = resolve(tmplDir, 'cli.config.json')
-    fs.copyFileSync(jsonTemplate, target)
+    copyFileSync(jsonTemplate, target)
   }
 
   console.log(`Sample Config Created: ${target}`)
