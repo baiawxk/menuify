@@ -1,103 +1,142 @@
-import type { CliConfig } from '../src/core'
-import { writeFile } from 'node:fs/promises'
-import { describe, expect, it, vi } from 'vitest'
-import { resolveConfig } from '../src/core'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { genShell } from '../src/generator'
 
 vi.mock('node:fs/promises', () => ({
   writeFile: vi.fn(),
+  mkdir: vi.fn(),
 }))
 
-vi.mock('../src/core', () => ({
-  resolveConfig: vi.fn().mockImplementation(async () => ({
-    config: mockConfig,
-    sources: ['cli.config.ts'],
-  })),
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn(),
 }))
 
-const mockConfig: CliConfig = {
-  menus: [
-    {
-      name: 'Test Command',
-      type: 'command',
-      task: 'echo "test"',
-    },
-    {
-      name: 'Multiple Commands',
-      type: 'command',
-      task: ['echo "one"', 'echo "two"'],
-    },
-  ],
-}
-
-describe('generator', () => {
+describe('shell generator', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(existsSync).mockReturnValue(true)
   })
 
-  it('should generate bash script', async () => {
-    await genShell({ type: 'bash' })
+  describe('cross-platform command normalization', () => {
+    it('should normalize environment variables for bash', async () => {
+      await genShell({
+        shell: 'echo %TEST_VAR%',
+        cmdName: 'test',
+        type: 'bash',
+      })
 
-    const [[, content]] = vi.mocked(writeFile).mock.calls
-    expect(content).toContain('#!/bin/bash')
-    expect(content).toContain('function run_test_command()')
-    expect(content).toContain('echo "test"')
-    expect(content).toContain('select opt in "${options[@]}"')
-  })
-
-  it('should generate cmd script', async () => {
-    await genShell({ type: 'cmd' })
-
-    const [[, content]] = vi.mocked(writeFile).mock.calls
-    expect(content).toContain('@echo off')
-    expect(content).toContain(':test_command')
-    expect(content).toContain('echo "test"')
-    expect(content).toContain('set /p choice=')
-  })
-
-  it('should generate powershell script', async () => {
-    await genShell({ type: 'ps1' })
-
-    const [[, content]] = vi.mocked(writeFile).mock.calls
-    expect(content).toContain('function Run-test_command')
-    expect(content).toContain('echo "test"')
-    expect(content).toContain('Show-Menu')
-    expect(content).toContain('Read-Host')
-  })
-
-  it('should handle multiple commands', async () => {
-    await genShell({ type: 'bash' })
-
-    const [[, content]] = vi.mocked(writeFile).mock.calls
-    expect(content).toContain('echo "one"')
-    expect(content).toContain('echo "two"')
-  })
-
-  it('should use custom output file', async () => {
-    await genShell({
-      type: 'bash',
-      cmdName: 'custom.sh',
+      const [[, content]] = vi.mocked(writeFile).mock.calls
+      expect(content).toContain('echo $TEST_VAR')
     })
 
-    expect(writeFile).toHaveBeenCalledWith(
-      expect.stringContaining('custom.sh'),
-      expect.any(String),
-      'utf-8',
-    )
-  })
+    it('should normalize environment variables for cmd', async () => {
+      await genShell({
+        shell: 'echo $TEST_VAR',
+        cmdName: 'test',
+        type: 'cmd',
+      })
 
-  it('should throw error if no menus found', async () => {
-    vi.mocked(resolveConfig).mockResolvedValueOnce({
-      config: { menus: [] },
-      sources: ['cli.config.ts'],
+      const [[, content]] = vi.mocked(writeFile).mock.calls
+      expect(content).toContain('echo %TEST_VAR%')
     })
 
-    await expect(genShell()).rejects.toThrow('No menus found in config')
+    it('should normalize environment variables for powershell', async () => {
+      await genShell({
+        shell: 'echo %TEST_VAR%',
+        cmdName: 'test',
+        type: 'ps1',
+      })
+
+      const [[, content]] = vi.mocked(writeFile).mock.calls
+      expect(content).toContain('echo $env:TEST_VAR')
+    })
   })
 
-  it('should throw error for unsupported script type', async () => {
-    await expect(genShell({
-      type: 'invalid' as any,
-    })).rejects.toThrow('Unsupported script type: invalid')
+  describe('shell type support', () => {
+    it('should generate fish shell script', async () => {
+      await genShell({
+        shell: 'echo test',
+        cmdName: 'test',
+        type: 'fish',
+      })
+
+      const [[, content]] = vi.mocked(writeFile).mock.calls
+      expect(content).toContain('#!/usr/bin/env fish')
+      expect(content).toContain('set -e')
+    })
+
+    it('should generate zsh shell script', async () => {
+      await genShell({
+        shell: 'echo test',
+        cmdName: 'test',
+        type: 'zsh',
+      })
+
+      const [[, content]] = vi.mocked(writeFile).mock.calls
+      expect(content).toContain('#!/bin/zsh')
+      expect(content).toContain('set -e')
+    })
+
+    it('should throw error for unsupported shell type', async () => {
+      await expect(genShell({
+        shell: 'echo test',
+        cmdName: 'test',
+        type: 'invalid' as any,
+      })).rejects.toThrow('Unsupported script type: invalid')
+    })
+  })
+
+  describe('output configuration', () => {
+    it('should use custom output directory', async () => {
+      const outputDir = '/custom/output/dir'
+      vi.mocked(existsSync).mockReturnValue(false)
+
+      await genShell({
+        shell: 'echo test',
+        cmdName: 'test',
+        type: 'bash',
+        outputDir,
+      })
+
+      expect(mkdir).toHaveBeenCalledWith(outputDir, { recursive: true })
+      expect(writeFile).toHaveBeenCalledWith(
+        expect.stringContaining(outputDir),
+        expect.any(String),
+        'utf-8',
+      )
+    })
+
+    it('should use custom filename', async () => {
+      await genShell({
+        shell: 'echo test',
+        cmdName: 'test',
+        fileName: 'custom-name',
+        type: 'bash',
+      })
+
+      expect(writeFile).toHaveBeenCalledWith(
+        expect.stringContaining('custom-name.sh'),
+        expect.any(String),
+        'utf-8',
+      )
+    })
+
+    it('should create missing directories', async () => {
+      vi.mocked(existsSync).mockReturnValue(false)
+
+      await genShell({
+        shell: 'echo test',
+        cmdName: 'test',
+        outputDir: 'new/dir',
+        type: 'bash',
+      })
+
+      expect(mkdir).toHaveBeenCalledWith(
+        expect.any(String),
+        { recursive: true },
+      )
+    })
   })
 })

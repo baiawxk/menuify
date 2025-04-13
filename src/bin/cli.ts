@@ -54,16 +54,18 @@ function setupCli(): void {
 
   cli.command('gen <name>', 'generate shell scripts')
     .option('-f, --fileName <fileName>', 'file name to generate script for')
+    .option('-o, --outputDir <dir>', 'output directory for generated scripts')
     .option('-c, --config <config>', 'config file to generate script for')
-    .option('-t, --type <type>', 'type to generate script for (bash|cmd|ps1|all)', {
+    .option('-t, --type <type>', 'type to generate script for (bash|cmd|ps1|fish|zsh)', {
       default: 'cmd',
     })
-    .action((name: string, { fileName, config, type }) => {
+    .action((name: string, { fileName, config, type, outputDir }) => {
       genShell({
-        shell: `menuify run ${name} ${config ? `--config ${config}` : ''}`,
+        shell: `menuify run "${name}" -c "${config ? `${config}` : process.cwd()}"`,
         cmdName: name,
         fileName,
-        type,
+        type: type as any,
+        outputDir,
       })
     })
 
