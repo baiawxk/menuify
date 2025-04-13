@@ -86,11 +86,12 @@ export function isFunctionMenuItem(menu: MenuItem): menu is FunctionMenu {
 
 export interface RunCfgOpt {
   file?: string
-  menuName?: string
+  name?: string
 }
 
 export async function runConfig(options: RunCfgOpt = {}): Promise<void> {
-  const { file, menuName } = options
+  console.log({ options })
+  const { file, name } = options
   const { config, sources } = await resolveConfig(file)
 
   if (sources && sources.length > 0) {
@@ -101,8 +102,23 @@ export async function runConfig(options: RunCfgOpt = {}): Promise<void> {
     await createSampleConfig()
     return
   }
+
   const taskRunner = new TaskRunner(config)
-  const menu = await searchMenu(config)
+  let menu: MenuItem | undefined
+
+  if (name) {
+    // If name is provided, find the menu directly
+    menu = config.menus?.find(m => m.name === name)
+    if (!menu) {
+      console.error(`Menu "${name}" not found`)
+      process.exit(1)
+    }
+  }
+  else {
+    // Otherwise use interactive search
+    menu = await searchMenu(config)
+  }
+
   await taskRunner.executeTask(menu)
 }
 
@@ -169,13 +185,40 @@ export interface InitCfgOpt {
   type?: 'json' | 'ts' | 'js'
 }
 
-export function initConfig(options: InitCfgOpt = {}) {
+export function initConfig(options: InitCfgOpt = {}): void {
   const currentFolder = dirname(fileURLToPath(import.meta.url))
   const tmplDir = resolve(currentFolder, './tmpl')
-  const configFileName = 'cli.config.json'
+  const type = options.type || 'ts'
 
-  const source = resolve(tmplDir, configFileName)
+  // Validate config type
+  if (!['json', 'ts', 'js'].includes(type)) {
+    console.error('Invalid config type. Supported types: json, ts, js')
+    process.exit(1)
+  }
+
+  const configFileName = `cli.config.${type}`
+  const source = resolve(tmplDir, 'cli.config.json')
   const target = resolve(process.cwd(), configFileName)
-  fs.copyFileSync(source, target)
+
+  // Don't overwrite existing config
+  if (fs.existsSync(target)) {
+    console.error(`Config file ${configFileName} already exists`)
+    process.exit(1)
+  }
+
+  // For TS/JS, we need to convert the JSON template
+  if (type !== 'json') {
+    const jsonContent = fs.readFileSync(source, 'utf-8')
+    const config = JSON.parse(jsonContent)
+    const tsContent = `import { defineMenu } from 'menuify'
+
+export default defineMenu(${JSON.stringify(config, null, 2)})
+`
+    fs.writeFileSync(target, tsContent)
+  }
+  else {
+    fs.copyFileSync(source, target)
+  }
+
   console.log(`Sample Config Created: ${target}`)
 }

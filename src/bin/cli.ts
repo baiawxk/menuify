@@ -29,16 +29,16 @@ function setupCli(): void {
 
   cli.command('', 'run config file')
     .option('-f, --file <file>', 'config file')
-    .option('-m, --menu <menuName>', 'run specific menu')
-    .action(({ file, menuName }) => {
-      runConfig({ file, menuName })
+    .option('-n, --name <name>', 'run specific menu')
+    .action((option) => {
+      runConfig(option)
     })
 
   cli.command('run', 'run config file')
     .option('-f, --file <file>', 'config file')
-    .option('-m, --menu <menuName>', 'run specific menu')
-    .action(({ file, menuName }) => {
-      runConfig({ file, menuName })
+    .option('-n, --name <name>', 'run specific menu')
+    .action((option) => {
+      runConfig(option)
     })
 
   cli.command('init', 'init config file')
@@ -54,14 +54,14 @@ function setupCli(): void {
     })
 
   cli.command('gen', 'generate shell scripts')
-    .option('--menu <menu>', 'menu name to generate script for')
-    .option('--platform <platform>', 'platform to generate script for (bash|cmd|ps1|all)', {
+    .option('-n, --name <name>', 'menu name to generate script for')
+    .option('-p, --platform <platform>', 'platform to generate script for (bash|cmd|ps1|all)', {
       default: 'all',
     })
     .action((options) => {
       generateShellScript({
         configFile: options.file,
-        outputFile: options.menu ? `menu-${options.menu}` : undefined,
+        outputFile: options.name ? `menu-${options.name}` : undefined,
         type: options.platform === 'all' ? undefined : options.platform,
       })
     })
