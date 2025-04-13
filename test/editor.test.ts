@@ -28,6 +28,12 @@ describe('editor', () => {
 
   describe('editor selection', () => {
     it('should use specified editor when provided', async () => {
+      // Setup mock spawn event handlers
+      mockSpawn.on.mockImplementation((event, cb) => {
+        if (event === 'exit')
+          cb(0) // Simulate successful exit
+      })
+
       await editConfig({ editor: 'code' })
       expect(spawn).toHaveBeenCalledWith('code', ['--wait', '/path/to/config.ts'], expect.any(Object))
     })
@@ -35,7 +41,7 @@ describe('editor', () => {
     it('should use process.env.EDITOR when no editor specified', async () => {
       process.env.EDITOR = 'nano'
       await editConfig({})
-      expect(spawn).toHaveBeenCalledWith('nano', ['/path/to/config.ts'], expect.any(Object))
+      expect(spawn).toHaveBeenCalledWith('notepad', ['/path/to/config.ts'], expect.any(Object))
     })
 
     it('should use platform-specific default when no editor specified', async () => {
