@@ -4,7 +4,7 @@ import process from 'node:process'
 import { cac } from 'cac'
 import { initConfig, runConfig } from '../core'
 import { editConfig } from '../editor'
-import { generateShellScript } from '../generator'
+import { genShell } from '../generator'
 
 setupCli()
 catchExitException()
@@ -27,18 +27,16 @@ function setupCli(): void {
     .version('0.0.1')
     .help()
 
-  cli.command('', 'run config file')
-    .option('-f, --file <file>', 'config file')
+  cli.command('[config]', 'run config specified in the command line')
     .option('-n, --name <name>', 'run specific menu')
-    .action((option) => {
-      runConfig(option)
+    .action((config, { name }) => {
+      runConfig({ config, name })
     })
 
-  cli.command('run', 'run config file')
-    .option('-f, --file <file>', 'config file')
-    .option('-n, --name <name>', 'run specific menu')
-    .action((option) => {
-      runConfig(option)
+  cli.command('run [name]', 'run the menu directly')
+    .option('-c, --config <config>', 'run config specified in the command line')
+    .action((name, { config }) => {
+      runConfig({ config, name })
     })
 
   cli.command('init', 'init config file')
@@ -47,22 +45,23 @@ function setupCli(): void {
       initConfig({ type })
     })
 
-  cli.command('edit', 'edit config file')
-    .option('-f, --file <file>', 'config file to edit, if not pass, will find config file in current directory')
-    .action(({ file }) => {
-      editConfig(file)
+  cli.command('edit [config]', 'config file to edit, if not pass, will find config file in current directory')
+    .action((config) => {
+      editConfig(config)
     })
 
-  cli.command('gen', 'generate shell scripts')
-    .option('-n, --name <name>', 'menu name to generate script for')
-    .option('-p, --platform <platform>', 'platform to generate script for (bash|cmd|ps1|all)', {
-      default: 'all',
+  cli.command('gen <name>', 'generate shell scripts')
+    .option('-f, --fileName <fileName>', 'file name to generate script for')
+    .option('-c, --config <config>', 'config file to generate script for')
+    .option('-t, --type <type>', 'type to generate script for (bash|cmd|ps1|all)', {
+      default: 'cmd',
     })
-    .action((options) => {
-      generateShellScript({
-        configFile: options.file,
-        outputFile: options.name ? `menu-${options.name}` : undefined,
-        type: options.platform === 'all' ? undefined : options.platform,
+    .action((name: string, { fileName, config, type }) => {
+      genShell({
+        shell: `menuify run ${name} ${config ? `--config ${config}` : ''}`,
+        cmdName: name,
+        fileName,
+        type,
       })
     })
 

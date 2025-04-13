@@ -2,7 +2,7 @@ import type { CliConfig } from '../src/core'
 import { writeFile } from 'node:fs/promises'
 import { describe, expect, it, vi } from 'vitest'
 import { resolveConfig } from '../src/core'
-import { generateShellScript } from '../src/generator'
+import { genShell } from '../src/generator'
 
 vi.mock('node:fs/promises', () => ({
   writeFile: vi.fn(),
@@ -36,7 +36,7 @@ describe('generator', () => {
   })
 
   it('should generate bash script', async () => {
-    await generateShellScript({ type: 'bash' })
+    await genShell({ type: 'bash' })
 
     const [[, content]] = vi.mocked(writeFile).mock.calls
     expect(content).toContain('#!/bin/bash')
@@ -46,7 +46,7 @@ describe('generator', () => {
   })
 
   it('should generate cmd script', async () => {
-    await generateShellScript({ type: 'cmd' })
+    await genShell({ type: 'cmd' })
 
     const [[, content]] = vi.mocked(writeFile).mock.calls
     expect(content).toContain('@echo off')
@@ -56,7 +56,7 @@ describe('generator', () => {
   })
 
   it('should generate powershell script', async () => {
-    await generateShellScript({ type: 'ps1' })
+    await genShell({ type: 'ps1' })
 
     const [[, content]] = vi.mocked(writeFile).mock.calls
     expect(content).toContain('function Run-test_command')
@@ -66,7 +66,7 @@ describe('generator', () => {
   })
 
   it('should handle multiple commands', async () => {
-    await generateShellScript({ type: 'bash' })
+    await genShell({ type: 'bash' })
 
     const [[, content]] = vi.mocked(writeFile).mock.calls
     expect(content).toContain('echo "one"')
@@ -74,9 +74,9 @@ describe('generator', () => {
   })
 
   it('should use custom output file', async () => {
-    await generateShellScript({
+    await genShell({
       type: 'bash',
-      outputFile: 'custom.sh',
+      cmdName: 'custom.sh',
     })
 
     expect(writeFile).toHaveBeenCalledWith(
@@ -92,11 +92,11 @@ describe('generator', () => {
       sources: ['cli.config.ts'],
     })
 
-    await expect(generateShellScript()).rejects.toThrow('No menus found in config')
+    await expect(genShell()).rejects.toThrow('No menus found in config')
   })
 
   it('should throw error for unsupported script type', async () => {
-    await expect(generateShellScript({
+    await expect(genShell({
       type: 'invalid' as any,
     })).rejects.toThrow('Unsupported script type: invalid')
   })

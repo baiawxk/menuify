@@ -85,13 +85,13 @@ export function isFunctionMenuItem(menu: MenuItem): menu is FunctionMenu {
 }
 
 export interface RunCfgOpt {
-  file?: string
+  config?: string
   name?: string
 }
 
 export async function runConfig(options: RunCfgOpt = {}): Promise<void> {
   console.log({ options })
-  const { file, name } = options
+  const { config: file, name } = options
   const { config, sources } = await resolveConfig(file)
 
   if (sources && sources.length > 0) {
