@@ -84,7 +84,13 @@ export function isFunctionMenuItem(menu: MenuItem): menu is FunctionMenu {
   return menu.type === 'function'
 }
 
-export async function displayMenu(file?: string): Promise<void> {
+export interface RunCfgOpt {
+  file?: string
+  menuName?: string
+}
+
+export async function runConfig(options: RunCfgOpt = {}): Promise<void> {
+  const { file, menuName } = options
   const { config, sources } = await resolveConfig(file)
 
   if (sources && sources.length > 0) {
@@ -159,7 +165,11 @@ function getMenu(config: CliConfig) {
   }) || []
 }
 
-export function initConfig() {
+export interface InitCfgOpt {
+  type?: 'json' | 'ts' | 'js'
+}
+
+export function initConfig(options: InitCfgOpt = {}) {
   const currentFolder = dirname(fileURLToPath(import.meta.url))
   const tmplDir = resolve(currentFolder, './tmpl')
   const configFileName = 'cli.config.json'

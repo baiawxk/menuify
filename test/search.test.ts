@@ -1,7 +1,7 @@
-import type { MenuItem, CliConfig } from '../src/core'
+import type { CliConfig, MenuItem } from '../src/core'
 import { search } from '@inquirer/prompts'
 import { describe, expect, it, vi } from 'vitest'
-import { displayMenu as displayMenuCore } from '../src/core'
+import { runConfig as displayMenuCore } from '../src/core'
 import { displayMenu } from '../src/display'
 
 vi.mock('@inquirer/prompts', () => ({
