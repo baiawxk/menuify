@@ -14,15 +14,24 @@ export interface GenShellOpts {
 
 export async function genShell({ shell, cmdName, type, fileName, outputDir }: GenShellOpts): Promise<void> {
   // Ensure cross-platform command
-  const crossPlatformShell = normalizeCrossplatformCommand(shell, type)
-  const script = generateScript(crossPlatformShell, type)
-  const outputPath = getOutputPath(fileName || sanitizeName(cmdName), type, outputDir)
+  const script = genScript(shell, type)
+
+  // Generate output file name
+  const ext = getExtensionForType(type)
+  const name = `${fileName || sanitizeName(cmdName)}.${ext}`
+  const outputPath = resolve(outputDir || resolve(process.cwd(), 'dist'), name)
 
   // Ensure output directory exists
   await ensureOutputDir(outputPath)
 
   await writeFile(outputPath, script, 'utf-8')
   console.log(`Generated script: ${outputPath}`)
+}
+
+function genScript(shell: string, type: ExtType) {
+  const crossPlatformShell = normalizeCrossplatformCommand(shell, type)
+  const script = generateScript(crossPlatformShell, type)
+  return script
 }
 
 async function ensureOutputDir(filePath: string): Promise<void> {
@@ -120,11 +129,7 @@ ${shell}
 `
 }
 
-function getOutputPath(cmdName: string, type: ExtType, outputDir?: string): string {
-  const ext = getExtensionForType(type)
-  const fileName = `${sanitizeName(cmdName)}.${ext}`
-  return resolve(outputDir || resolve(process.cwd(), 'dist'), fileName)
-}
+
 
 function getExtensionForType(type: ExtType): string {
   switch (type) {

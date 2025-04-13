@@ -90,20 +90,14 @@ export interface RunCfgOpt {
 }
 
 export async function runConfig(options: RunCfgOpt = {}): Promise<void> {
-  console.log({ options })
-  const { config: file, name } = options
-  const { config, sources } = await resolveConfig(file)
+  const resolved = await resolveConfig(options.config)
+  const menu = await findMenuBy(resolved.config, options.name)
 
-  if (sources && sources.length > 0) {
-    console.log(`Config File: ${sources[0]}`)
-  }
+  const taskRunner = new TaskRunner(resolved.config)
+  await taskRunner.executeTask(menu)
+}
 
-  if (!config) {
-    await createSampleConfig()
-    return
-  }
-
-  const taskRunner = new TaskRunner(config)
+async function findMenuBy(config: CliConfig, name?: string) {
   let menu: MenuItem | undefined
 
   if (name) {
@@ -118,13 +112,12 @@ export async function runConfig(options: RunCfgOpt = {}): Promise<void> {
     // Otherwise use interactive search
     menu = await searchMenu(config)
   }
-
-  await taskRunner.executeTask(menu)
+  return menu
 }
 
-async function searchMenu(config: CliConfig) {
+export async function searchMenu(config: CliConfig, { message } = { message: 'Select a command to run' }) {
   const menu = await search<MenuItem>({
-    message: 'Select a command to run',
+    message,
     pageSize: 15,
     source: (input) => {
       const menus = getMenu(config)
@@ -164,10 +157,23 @@ export async function resolveConfig(file?: string) {
     sources: file
       ? [{ files: file }]
       : [{
-          files: 'cli.config',
-          extensions: ['ts', 'js', 'json'],
-        }],
+        files: 'cli.config',
+        extensions: ['ts', 'js', 'json'],
+      }],
   })
+
+  const { config, sources } = result
+
+  if (sources && sources.length > 0) {
+    console.log(`Config File: ${sources[0]}`)
+  }
+
+  if (!config) {
+    await createSampleConfig()
+    process.exit(0)
+  }
+
+
   return result
 }
 

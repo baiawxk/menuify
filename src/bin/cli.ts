@@ -2,7 +2,7 @@
 
 import process from 'node:process'
 import { cac } from 'cac'
-import { initConfig, runConfig } from '../core'
+import { initConfig, resolveConfig, runConfig, searchMenu } from '../core'
 import { editConfig } from '../editor'
 import { genShell } from '../generator'
 
@@ -52,17 +52,19 @@ function setupCli(): void {
       editConfig({ config, editor })
     })
 
-  cli.command('gen <name>', 'generate shell scripts')
+  cli.command('gen', 'generate shell scripts')
     .option('-f, --fileName <fileName>', 'file name to generate script for')
     .option('-o, --outputDir <dir>', 'output directory for generated scripts')
     .option('-c, --config <config>', 'config file to generate script for')
     .option('-t, --type <type>', 'type to generate script for (bash|cmd|ps1|fish|zsh)', {
       default: 'cmd',
     })
-    .action((name: string, { fileName, config, type, outputDir }) => {
+    .action(async ({ fileName, config, type, outputDir }) => {
+      const resolved = await resolveConfig(config)
+      const menu = await searchMenu(resolved.config, { message: 'Select a menu to generate script for' })
       genShell({
-        shell: `menuify run "${name}" -c "${config ? `${config}` : process.cwd()}"`,
-        cmdName: name,
+        shell: `menuify run "${menu.name}" -c "${config ? `${config}` : resolved.sources[0]}"`,
+        cmdName: menu.name,
         fileName,
         type: type as any,
         outputDir,
