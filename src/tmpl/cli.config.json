@@ -32,7 +32,7 @@
     {
       "name": "Deploy",
       "type": "command",
-      "task": "npm run deploy -- --env=${environment}",
+      "task": "npm run deploy -- --env={environment}",
       "description": "Deploy to environment",
       "dependsOn": ["Build Project", "Run Tests"],
       "inputs": [

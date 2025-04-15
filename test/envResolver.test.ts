@@ -77,7 +77,7 @@ describe('envResolver', () => {
         inputs: { var: 'input' },
       })
 
-      expect(resolver.resolve('${var} %var%')).toBe('input menu')
+      expect(resolver.resolve('{var} %var%')).toBe('input menu')
     })
 
     it('should handle non-string input values', () => {
@@ -85,7 +85,7 @@ describe('envResolver', () => {
         inputs: { num: 42, bool: true },
       })
 
-      expect(resolver.resolve('number: ${num}, boolean: ${bool}')).toBe('number: 42, boolean: true')
+      expect(resolver.resolve('number: {num}, boolean: {bool}')).toBe('number: 42, boolean: true')
     })
   })
 
@@ -117,7 +117,7 @@ describe('envResolver', () => {
         inputs: { empty: '' },
       })
 
-      expect(resolver.resolve('value: ${empty}')).toBe('value: ')
+      expect(resolver.resolve('value: {empty}')).toBe('value: ')
     })
   })
 
@@ -144,7 +144,7 @@ describe('envResolver', () => {
       const menu: MenuItem = {
         name: 'test',
         type: 'command',
-        task: '%cmd% ${arg}',
+        task: '%cmd% {arg}',
       }
 
       const resolved = resolver.resolveMenu(menu)

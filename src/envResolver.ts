@@ -72,14 +72,14 @@ export class EnvResolver {
   }
 
   private containsVariables(value: string): boolean {
-    return /(\$\{[\w-]+\}|%[\w-]+%)/.test(value)
+    return /\{[\w-]+\}|%[\w-]+%/.test(value)
   }
 
   private processInputVariables(value: string): string {
     if (isEmpty(this.inputs))
       return value
     else
-      return this.replaceVariables(value, this.inputs, '${', '}')
+      return this.replaceVariables(value, this.inputs, '{', '}')
   }
 
   private processMenuVariables(value: string): string {
@@ -132,7 +132,7 @@ export class EnvResolver {
 
   private findUnresolvedVariables(str: string): string[] {
     const patterns = [
-      /\$\{([\w-]+)\}/g, // Input variables
+      /\{([\w-]+)\}/g, // Input variables
       /%([\w-]+)%/g, // Global variables
     ]
 
