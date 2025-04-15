@@ -1,7 +1,7 @@
 {
   "name": "menuify",
   "type": "module",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "packageManager": "pnpm@10.7.1",
   "description": "A CLI menu generator with advanced features like task dependencies, user inputs, and environment variables support.",
   "author": "baiawxk <baiawxk@qq.com>",
