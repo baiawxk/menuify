@@ -18,10 +18,10 @@ export default defineBuildConfig({
 
       // Copy all config templates
       const templates = [
-        'cli.config.json',
-        'cli.config.ts',
-        'cli.config.mjs',
-        'cli.config.cjs'
+        'menuify.config.json',
+        'menuify.config.ts',
+        'menuify.config.mjs',
+        'menuify.config.cjs',
       ]
 
       for (const template of templates) {

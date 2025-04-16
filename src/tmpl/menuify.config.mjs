@@ -1,6 +1,6 @@
-import { defineMenu } from 'menuify'
+import { defineConfig } from 'menuify'
 
-export default defineMenu({
+export default defineConfig({
   debug: false,
   env: {
     NODE_ENV: 'development'

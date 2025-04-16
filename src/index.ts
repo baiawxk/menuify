@@ -1,1 +1,1 @@
-export { defineMenu, runConfig } from './core'
+export { defineConfig, runConfig } from './core'

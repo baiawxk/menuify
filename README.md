@@ -26,11 +26,11 @@ npm install menuify
 menuify init
 ```
 
-2. Or create `cli.config.ts` manually:
+2. Or create `menuify.config.ts` manually:
 ```typescript
-import { defineMenu } from 'menuify'
+import { defineConfig } from 'menuify'
 
-export default defineMenu({
+export default defineConfig({
   menus: [
     {
       name: 'Install Dependencies',
@@ -60,9 +60,9 @@ menuify
 
 ### Complete Example
 ```typescript
-import { defineMenu } from 'menuify'
+import { defineConfig } from 'menuify'
 
-export default defineMenu({
+export default defineConfig({
   // Environment variables configuration
   env: {
     // Environment options

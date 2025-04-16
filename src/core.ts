@@ -67,7 +67,7 @@ export interface CliConfig {
   menus?: MenuItem[]
 }
 
-export function defineMenu(config: CliConfig): CliConfig {
+export function defineConfig(config: CliConfig): CliConfig {
   return config
 }
 
@@ -156,7 +156,7 @@ export async function resolveConfig(file?: string) {
     sources: file
       ? [{ files: file }]
       : [{
-        files: 'cli.config',
+        files: 'menuify.config',
         extensions: ['ts', 'js', 'json'],
       }],
   })
@@ -212,9 +212,9 @@ export function initConfig(options: InitCfgOpt = {}): void {
     process.exit(1)
   }
 
-  const configFileName = `cli.config.${type}`
+  const configFileName = `menuify.config.${type}`
   const baseTemplate = templateMap[type]
-  const source = resolve(tmplDir, `cli.config.${baseTemplate}`)
+  const source = resolve(tmplDir, `menuify.config.${baseTemplate}`)
   const target = resolve(process.cwd(), configFileName)
 
   // Don't overwrite existing config
@@ -241,7 +241,7 @@ export function initConfig(options: InitCfgOpt = {}): void {
   }
   else {
     // For JSON, use the JSON template directly
-    const jsonTemplate = resolve(tmplDir, 'cli.config.json')
+    const jsonTemplate = resolve(tmplDir, 'menuify.config.json')
     copyFileSync(jsonTemplate, target)
   }
 

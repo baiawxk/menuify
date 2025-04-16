@@ -14,9 +14,9 @@ describe('initConfig', () => {
     vi.clearAllMocks()
     vi.mocked(existsSync).mockReturnValue(false)
     vi.mocked(readFileSync).mockReturnValue(`
-import { defineMenu } from 'menuify'
+import { defineConfig } from 'menuify'
 
-export default defineMenu({
+export default defineConfig({
   debug: false,
   env: { NODE_ENV: 'development' },
   menus: [
@@ -32,8 +32,8 @@ export default defineMenu({
   it('should create TypeScript config by default', () => {
     initConfig()
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-      expect.stringContaining('cli.config.ts'),
-      expect.stringContaining('import { defineMenu }'),
+      expect.stringContaining('menuify.config.ts'),
+      expect.stringContaining('import { defineConfig }'),
       expect.any(String)
     )
   })
@@ -48,7 +48,7 @@ export default defineMenu({
     'json'
   ])('should handle %s config type', (type) => {
     initConfig({ type: type as any })
-    expect(vi.mocked(writeFileSync).mock.calls[0][0]).toContain(`cli.config.${type}`)
+    expect(vi.mocked(writeFileSync).mock.calls[0][0]).toContain(`menuify.config.${type}`)
   })
 
   it('should throw error for invalid config type', () => {
@@ -86,7 +86,7 @@ export default defineMenu({
   it('should remove TypeScript types for JavaScript variants', () => {
     initConfig({ type: 'js' })
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-      expect.stringContaining('cli.config.js'),
+      expect.stringContaining('menuify.config.js'),
       expect.not.stringContaining(': string'),
       expect.any(String)
     )
@@ -95,8 +95,8 @@ export default defineMenu({
   it('should use JSON template for JSON type', () => {
     initConfig({ type: 'json' })
     expect(vi.mocked(copyFileSync)).toHaveBeenCalledWith(
-      expect.stringContaining('cli.config.json'),
-      expect.stringContaining('cli.config.json')
+      expect.stringContaining('menuify.config.json'),
+      expect.stringContaining('menuify.config.json')
     )
   })
 })
