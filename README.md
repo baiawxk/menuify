@@ -1,19 +1,26 @@
 # menuify
 
-🎯 A powerful CLI menu generator with advanced features like task dependencies, user inputs, and environment variables support.
+🎯 A CLI menu generator inspired by VSCode Tasks, bringing similar convenience to your terminal workflow.
 
-强大的CLI菜单生成器，支持任务依赖、用户输入和环境变量等高级特性。
+Do you often need to:
+- Repeat complex commands when switching between projects?
+- Configure different parameter combinations for different environments?
+- Share standardized development workflows with your team?
+
+menuify is inspired by VSCode Tasks, aiming to bring these convenient task management capabilities to your terminal environment. It's still under active development, and we welcome your suggestions and feature requests through Issues.
 
 ## ✨ Features
 
-- 😊 Interactive CLI menu with fuzzy search
-- 🔧 Auto config loading via `unconfig`
-- 💻 Execute commands, open links, or run custom functions
+- 😊 Friendly interactive CLI menu with fuzzy search
+- 🔧 Automatic config loading via `unconfig`
+- ⚡ Execute commands, open links, or run custom functions
 - 📝 Rich input types support (prompt, pick, confirm, multi-select)
 - 🔄 Task dependencies and execution modes
-- 🌍 Environment variables support
+- 🌍 Cross-platform environment variables support
+- 🎛️ VSCode-like task configuration experience
+- 🏗️ Advanced task system with dependencies
 
-## 📦 Installation
+## 🛠️ Installation
 
 ```bash
 npm install menuify
@@ -27,10 +34,14 @@ menuify init
 ```
 
 2. Or create `menuify.config.ts` manually:
+
 ```typescript
 import { defineConfig } from 'menuify'
 
 export default defineConfig({
+  env: {
+    NODE_ENV: 'development'
+  },
   menus: [
     {
       name: 'Install Dependencies',
@@ -46,6 +57,19 @@ export default defineConfig({
       name: 'Open Docs',
       type: 'link',
       task: 'https://github.com/baiawxk/cli-menu'
+    },
+    {
+      name: 'Run Tests',
+      type: 'command',
+      task: 'npm test',
+      inputs: [
+        {
+          id: 'testType',
+          type: 'pickString',
+          description: 'Select test type',
+          options: ['unit', 'integration', 'e2e']
+        }
+      ]
     }
   ]
 })
@@ -73,7 +97,7 @@ export default defineConfig({
     {
       name: 'Build Project',
       type: 'command',
-      task: 'npm run build',
+      task: 'npm run build --mode {env}',
       inputs: [
         {
           id: 'env',
@@ -132,18 +156,18 @@ export default defineConfig({
 #### Link Menu
 ```typescript
 {
-  name: string;           // Display name
-  type: 'link';          // Menu type
-  task: string;         // URL or file path
+  name: string // Display name
+  type: 'link' // Menu type
+  task: string // URL or file path
 }
 ```
 
 #### Function Menu
 ```typescript
 {
-  name: string;                                     // Display name
-  type: 'function';                                // Menu type
-  task: (ctx: ExecutionContext) => Promise<void>;  // Custom function with context
+  name: string // Display name
+  type: 'function' // Menu type
+  task: (ctx: ExecutionContext) => Promise<void> // Custom function with context
 }
 ```
 
@@ -157,12 +181,12 @@ Supported input types:
 
 ```typescript
 interface TaskInput {
-  id: string;              // Input identifier
-  type: TaskInputType;     // Input type
-  description?: string;    // Input description
-  default?: string;        // Default value
-  options?: string[];      // Options for pick/multiSelect
-  joinSymbol?: string;    // Join symbol for multiSelect
+  id: string // Input identifier
+  type: TaskInputType // Input type
+  description?: string // Input description
+  default?: string // Default value
+  options?: string[] // Options for pick/multiSelect
+  joinSymbol?: string // Join symbol for multiSelect
 }
 ```
 
@@ -186,7 +210,7 @@ Commands:
   [config]             Run config specified in the command line
     -n, --name        Run specific menu
 
-  run [name]          Run the menu directly 
+  run [name]          Run the menu directly
     -c, --config     Config file to use
 
   init                Initialize config file
@@ -197,13 +221,13 @@ Commands:
     -e, --editor     Editor to use (vim|nano|notepad|code|sublime|atom)
 
   gen                 Generate shell scripts
-    -f, --fileName   File name to generate script for  
+    -f, --fileName   File name to generate script for
     -o, --outputDir  Output directory for generated scripts
     -c, --config     Config file to generate script for
     -t, --type       Type to generate script for (bash|cmd|ps1|fish|zsh), default: cmd
 
 Options:
-  -v, --version       Show version number 
+  -v, --version       Show version number
   -h, --help         Show help
 ```
 
@@ -228,11 +252,33 @@ Options:
   - Multiple command execution
   - Custom function integration
 
+### 🌱 Environment Variables Best Practices
+
+1. **Cross-platform variables**:
+```typescript
+env: {
+  // Works consistently across all platforms
+  NODE_ENV: 'development',
+  // Avoid platform-specific paths
+  PATH: '/usr/local/bin' // Platform-dependent, not recommended
+}
+```
+
+2. **Using variables in commands**:
+```typescript
+{
+  name: 'Start Server',
+  type: 'command',
+  // Recommended cross-platform variable syntax
+  task: 'node server.js --env=$NODE_ENV --port=$PORT'
+}
+```
+
 ## 👤 Author
 
 baiawxk <baiawxk@qq.com>
 
-## 📄 License
+## 📜 License
 
 MIT
 
