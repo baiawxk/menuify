@@ -1,10 +1,3 @@
-import { antfu } from '@antfu/eslint-config'
+import { defineConfig } from 'bumpp'
 
-export default antfu({
-  rules: {
-    'no-console': 'off',
-    'unused-imports/no-unused-vars': 'off',
-    'antfu/no-top-level-await': 'off',
-  },
-  typescript: true,
-})
+export default defineConfig()

@@ -44,6 +44,7 @@
     "boxen": "^8.0.1",
     "cac": "^6.7.14",
     "chalk": "^5.4.1",
+    "chq-eslint": "^0.0.8",
     "execa": "^9.5.2",
     "listr2": "^8.3.2",
     "open": "^10.1.0",
@@ -51,7 +52,6 @@
     "unconfig": "^7.3.1"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^4.11.0",
     "@antfu/ni": "^24.3.0",
     "@antfu/utils": "^9.2.0",
     "@types/node": "^22.14.0",
