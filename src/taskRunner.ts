@@ -1,9 +1,9 @@
 import type { CliConfig, ExecutionContext, MenuItem, TaskStatus } from './core'
+import { confirm, input } from '@inquirer/prompts'
 import { Listr } from 'listr2'
 import { DependencyResolver } from './dependencyResolver'
 import { InputHandler } from './handlers/inputHandler'
 import { TaskHandler } from './handlers/taskHandler'
-import { confirm, input } from '@inquirer/prompts'
 
 export class TaskRunner {
   private readonly context: ExecutionContext
@@ -31,8 +31,9 @@ export class TaskRunner {
   }
 
   private logDebug(...args: any[]): void {
-    if (this.context.debug)
+    if (this.context.debug) {
       console.log('[DEBUG]', ...args)
+    }
   }
 
   getTaskStatus(taskName: string): TaskStatus {
@@ -41,8 +42,9 @@ export class TaskRunner {
 
   private async findTaskByName(name: string): Promise<MenuItem> {
     const task = this.dependencyResolver.findMenu(name)
-    if (!task)
+    if (!task) {
       throw new Error(`Task not found: ${name}`)
+    }
     return task
   }
 
@@ -70,20 +72,23 @@ export class TaskRunner {
   private handleTaskError(taskName: string, error: unknown): void {
     this.context.taskStatuses?.set(taskName, 'failed')
     this.logDebug(`Task ${taskName} failed:`, error)
-    if (error instanceof Error)
+    if (error instanceof Error) {
       this.logDebug(error.stack)
+    }
   }
 
   private async processDependencies(task: MenuItem): Promise<void> {
-    if (!task.dependsOn?.length)
+    if (!task.dependsOn?.length) {
       return
+    }
 
     this.logDebug(`${task.name} has dependencies: ${task.dependsOn.join(', ')}`)
 
     for (const depName of task.dependsOn) {
       const depTask = await this.findTaskByName(depName)
-      if(depTask)
+      if (depTask) {
         await this.executeTask(depTask)
+      }
     }
   }
 
@@ -122,14 +127,16 @@ export class TaskRunner {
   }
 
   private async processMenuInputs(menu: MenuItem, taskContext: ExecutionContext): Promise<void> {
-    if (!menu.inputs?.length)
+    if (!menu.inputs?.length) {
       return
+    }
 
     this.logDebug(`Processing inputs for menu ${menu.name}`)
     taskContext.inputs = {}
 
-    for (const input of menu.inputs)
+    for (const input of menu.inputs) {
       await this.inputHandler.processInput(input, taskContext)
+    }
   }
 
   private updateGlobalContext(taskContext: ExecutionContext): void {

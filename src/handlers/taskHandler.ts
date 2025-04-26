@@ -12,12 +12,13 @@ export class TaskHandler {
   }
 
   async executeMenuItem(menu: MenuItem, context: ExecutionContext): Promise<void> {
-    if (context.debug)
+    if (context.debug) {
       console.log(`[DEBUG] Executing menu item: ${menu.name} (${menu.type})`)
+    }
 
     // Initialize env resolver with current context and menu env
     // Menu env should override global env
-    const menuEnv = { ...context.menuEnv, ...(menu.env || {}) }
+    const menuEnv = { ...context.menuEnv, ...menu.env || {} }
     this.envResolver = new EnvResolver({
       globalEnv: context.env,
       menuEnv,
@@ -39,12 +40,14 @@ export class TaskHandler {
           throw new Error(`Unsupported menu type: ${menu}`)
       }
 
-      if (context.debug)
+      if (context.debug) {
         console.log(`[DEBUG] Menu item ${menu.name} executed successfully`)
+      }
     }
     catch (error) {
-      if (context.debug)
+      if (context.debug) {
         console.error(`[DEBUG] Error executing menu item ${menu.name}:`, error)
+      }
       throw error
     }
   }
@@ -54,8 +57,9 @@ export class TaskHandler {
 
     for (const cmd of commands) {
       const resolvedCmd = this.envResolver.resolve(cmd) as string
-      if (context.debug)
+      if (context.debug) {
         console.log(`[DEBUG] Executing command: ${resolvedCmd}`)
+      }
 
       await execa(resolvedCmd, {
         shell: true,
@@ -71,21 +75,24 @@ export class TaskHandler {
 
   private async executeLink(url: string | string[]): Promise<void> {
     if (Array.isArray(url)) {
-      for (const u of url)
+      for (const u of url) {
         await this.executeLink(u)
+      }
       return
     }
 
-    if (typeof url !== 'string')
+    if (typeof url !== 'string') {
       throw new TypeError('Link URL must be a string')
+    }
 
     const resolvedUrl = this.envResolver.resolve(url) as string
     await open(resolvedUrl)
   }
 
   private async executeFunction(fn: unknown, context: ExecutionContext): Promise<void> {
-    if (typeof fn !== 'function')
+    if (typeof fn !== 'function') {
       throw new TypeError('Task value must be a function for function type menu')
+    }
 
     const ctx = {
       env: { ...context.env },
