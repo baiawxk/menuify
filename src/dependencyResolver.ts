@@ -14,17 +14,18 @@ export class DependencyResolver {
    */
   private buildDependencyGraph(menus: MenuItem[]): Map<string, Set<string>> {
     const graph = new Map<string, Set<string>>()
-    
+
     for (const menu of menus) {
       graph.set(menu.name, new Set(menu.dependsOn || []))
-      
+
       // Validate that all dependencies exist
       for (const dep of menu.dependsOn || []) {
-        if (!this.menuMap.has(dep))
+        if (!this.menuMap.has(dep)) {
           throw new Error(`Menu "${menu.name}" depends on non-existent menu "${dep}"`)
+        }
       }
     }
-    
+
     return graph
   }
 
@@ -40,15 +41,16 @@ export class DependencyResolver {
    */
   getDependentMenus(menuName: string): MenuItem[] {
     const dependents: MenuItem[] = []
-    
+
     for (const [name, deps] of this.dependencyGraph) {
       if (deps.has(menuName)) {
         const menu = this.menuMap.get(name)
-        if (menu)
+        if (menu) {
           dependents.push(menu)
+        }
       }
     }
-    
+
     return dependents
   }
 
@@ -57,15 +59,16 @@ export class DependencyResolver {
    */
   resolveDependencies(menuName: string): MenuItem[] {
     // Validate menu exists
-    if (!this.menuMap.has(menuName))
+    if (!this.menuMap.has(menuName)) {
       throw new Error(`Menu "${menuName}" not found`)
+    }
 
     const visited = new Set<string>()
     const result: MenuItem[] = []
-    
+
     // Check for cycles and build execution order
     this.topologicalSort(menuName, visited, new Set(), result)
-    
+
     return result
   }
 
@@ -83,22 +86,24 @@ export class DependencyResolver {
     if (stack.has(menuName)) {
       const cycle = Array.from(stack).concat(menuName)
       throw new Error(
-        `Circular dependency detected: ${cycle.join(' -> ')}\n` +
-        'Please check your menu dependencies and remove the cycle.',
+        `Circular dependency detected: ${cycle.join(' -> ')}\n`
+        + 'Please check your menu dependencies and remove the cycle.',
       )
     }
 
     // Skip if already processed
-    if (visited.has(menuName))
+    if (visited.has(menuName)) {
       return
+    }
 
     // Add to current path for cycle detection
     stack.add(menuName)
 
     // Process all dependencies first
     const deps = this.dependencyGraph.get(menuName) || new Set()
-    for (const dep of deps)
+    for (const dep of deps) {
       this.topologicalSort(dep, visited, stack, result)
+    }
 
     // Remove from path and mark as visited
     stack.delete(menuName)
@@ -106,8 +111,9 @@ export class DependencyResolver {
 
     // Add to result after all dependencies
     const menu = this.menuMap.get(menuName)
-    if (menu)
+    if (menu) {
       result.push(menu)
+    }
   }
 }
 
@@ -129,12 +135,13 @@ export function resolveDependencies(menus: MenuItem[], targetMenu?: string): Men
   }
 
   // Find root menus (ones with no dependents)
-  const rootMenus = menus.filter(menu => 
+  const rootMenus = menus.filter(menu =>
     !resolver.getDependentMenus(menu.name).length)
 
   // If no root menus, return all menus in dependency order
-  if (!rootMenus.length)
+  if (!rootMenus.length) {
     return menus
+  }
 
   // Resolve dependencies for each root menu
   const resolved = new Set<MenuItem>()

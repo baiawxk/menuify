@@ -26,12 +26,14 @@ export class InputHandler {
     }
 
     // Store result in context
-    if (!context.inputs)
+    if (!context.inputs) {
       context.inputs = {}
+    }
     context.inputs[taskInput.id] = result
 
-    if (context.debug)
+    if (context.debug) {
       console.log(`[DEBUG] Input ${taskInput.id} processed with value:`, result)
+    }
 
     return result
   }
@@ -44,14 +46,16 @@ export class InputHandler {
   }
 
   private async handlePickString(taskInput: TaskInput): Promise<string> {
-    if (!taskInput.options?.length)
+    if (!taskInput.options?.length) {
       return taskInput.default || ''
+    }
 
     return await search({
       message: taskInput.description || `Select value for ${taskInput.id}`,
       source: async (term) => {
-        if (!term)
+        if (!term) {
           return taskInput.options || []
+        }
         return taskInput.options?.filter(opt =>
           opt.toLowerCase().includes(term.toLowerCase()),
         ) || []
@@ -71,8 +75,9 @@ export class InputHandler {
   }
 
   private async handleMultiSelect(taskInput: TaskInput): Promise<string> {
-    if (!taskInput.options?.length)
+    if (!taskInput.options?.length) {
       return ''
+    }
 
     const choices = taskInput.options.map(opt => ({ value: opt }))
     const selected = await checkbox({

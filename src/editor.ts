@@ -13,12 +13,14 @@ export interface EditCfgOpts {
 
 function getDefaultEditor(): string {
   // Platform specific defaults
-  if (process.platform === 'win32')
+  if (process.platform === 'win32') {
     return 'notepad'
+  }
 
   // Try common editors on Unix systems
-  if (process.platform === 'darwin')
-    return 'nano' // More user-friendly default for macOS
+  if (process.platform === 'darwin') {
+    return 'nano'
+  } // More user-friendly default for macOS
 
   return 'vim' // Default for Unix-like systems
 }
@@ -27,8 +29,9 @@ function validateEditor(editor: string): EditorType | string {
   const knownEditors: EditorType[] = ['vim', 'nano', 'notepad', 'code', 'sublime', 'atom']
 
   // If it's a known editor type, return as is
-  if (knownEditors.includes(editor as EditorType))
+  if (knownEditors.includes(editor as EditorType)) {
     return editor
+  }
 
   // For custom editors, validate that they exist in PATH
   // This is a basic check that could be enhanced
@@ -40,8 +43,9 @@ function validateEditor(editor: string): EditorType | string {
  */
 export async function editConfig({ config, editor }: EditCfgOpts): Promise<void> {
   const configFile = await findConfigFile(config)
-  if (!configFile)
+  if (!configFile) {
     throw new Error('No config file found')
+  }
 
   // Determine which editor to use
   const selectedEditor = validateEditor(editor || getDefaultEditor())
@@ -80,17 +84,21 @@ export async function editConfig({ config, editor }: EditCfgOpts): Promise<void>
     })
 
     child.on('exit', (code) => {
-      if (code === 0)
+      if (code === 0) {
         resolve()
-      else
+      }
+      else {
         reject(new Error(`Editor exited with code ${code}`))
+      }
     })
 
     child.on('error', (error) => {
-      if (error.message.includes('ENOENT'))
+      if (error.message.includes('ENOENT')) {
         reject(new Error(`Editor "${selectedEditor}" not found. Please ensure it's installed and in your PATH.`))
-      else
+      }
+      else {
         reject(error)
+      }
     })
   })
 }

@@ -1,4 +1,4 @@
-import type { MenuItem, CliConfig } from './core'
+import type { CliConfig, MenuItem } from './core'
 import { search } from '@inquirer/prompts'
 import boxen from 'boxen'
 import chalk from 'chalk'
@@ -32,13 +32,14 @@ export async function searchMenu(config: CliConfig, options: DisplayOptions): Pr
     message: 'Select a menu to execute',
     pageSize: 15,
     source: async (input) => {
-      if (!input)
+      if (!input) {
         return formatMenuChoices(menus, options)
+      }
 
       const normalizedInput = input.toLowerCase()
       const filtered = menus.filter(menu =>
         menu.name.toLowerCase().includes(normalizedInput)
-        || (options.showDescription && menu.description?.toLowerCase().includes(normalizedInput)),
+        || options.showDescription && menu.description?.toLowerCase().includes(normalizedInput),
       )
 
       return formatMenuChoices(filtered, options)

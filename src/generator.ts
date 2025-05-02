@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 
 export type ExtType = 'bash' | 'cmd' | 'ps1' | 'fish' | 'zsh'
+
 export interface GenShellOpts {
   shell: string
   cmdName: string
@@ -36,8 +37,9 @@ function genScript(shell: string, type: ExtType) {
 
 async function ensureOutputDir(filePath: string): Promise<void> {
   const dir = dirname(filePath)
-  if (!existsSync(dir))
+  if (!existsSync(dir)) {
     await mkdir(dir, { recursive: true })
+  }
 }
 
 function normalizeCrossplatformCommand(cmd: string, type: ExtType): string {
@@ -128,8 +130,6 @@ set -e # Exit on error
 ${shell}
 `
 }
-
-
 
 function getExtensionForType(type: ExtType): string {
   switch (type) {

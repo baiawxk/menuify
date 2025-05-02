@@ -20,8 +20,9 @@ export class EnvResolver {
   }
 
   resolveMenu<T extends MenuItem>(menu: T): T {
-    if (menu.task === undefined)
+    if (menu.task === undefined) {
       throw new Error(`Menu "${menu.name}" has no task defined`)
+    }
 
     return {
       ...menu,
@@ -30,8 +31,9 @@ export class EnvResolver {
   }
 
   private resolveValue(value: TaskValue): TaskValue {
-    if (typeof value === 'function')
+    if (typeof value === 'function') {
       return value
+    }
 
     return Array.isArray(value)
       ? value.map(v => this.resolveString(v))
@@ -45,19 +47,22 @@ export class EnvResolver {
         : this.resolveString(value)
     }
     catch (error) {
-      if (error instanceof Error)
-        throw new Error(`Failed to resolve variables: ${error.message}`)
+      if (error instanceof Error) {
+        throw new TypeError(`Failed to resolve variables: ${error.message}`)
+      }
       throw error
     }
   }
 
   private resolveString(value: string): string {
-    if (typeof value !== 'string')
+    if (typeof value !== 'string') {
       throw new TypeError(`Value must be a string, but got: ${typeof value}`)
+    }
 
     // Skip resolution if no variables present
-    if (!this.containsVariables(value))
+    if (!this.containsVariables(value)) {
       return value
+    }
 
     // Resolve variables in order of precedence
     let result = value
@@ -76,24 +81,30 @@ export class EnvResolver {
   }
 
   private processInputVariables(value: string): string {
-    if (isEmpty(this.inputs))
+    if (isEmpty(this.inputs)) {
       return value
-    else
+    }
+    else {
       return this.replaceVariables(value, this.inputs, '{', '}')
+    }
   }
 
   private processMenuVariables(value: string): string {
-    if (isEmpty(this.menuEnv))
+    if (isEmpty(this.menuEnv)) {
       return value
-    else
+    }
+    else {
       return this.replaceVariables(value, this.menuEnv, '%', '%')
+    }
   }
 
   private processGlobalVariables(value: string): string {
-    if (isEmpty(this.globalEnv))
+    if (isEmpty(this.globalEnv)) {
       return value
-    else
+    }
+    else {
       return this.replaceVariables(value, this.globalEnv, '%', '%')
+    }
   }
 
   private replaceVariables(
@@ -139,8 +150,9 @@ export class EnvResolver {
     const unresolved = new Set<string>()
     for (const pattern of patterns) {
       let match
-      while ((match = pattern.exec(str)) !== null)
+      while ((match = pattern.exec(str)) !== null) {
         unresolved.add(match[1])
+      }
     }
 
     return Array.from(unresolved)
