@@ -46,7 +46,13 @@ export interface LinkMenu extends BaseMenu {
 
 export interface FunctionMenu extends BaseMenu {
   type: 'function'
-  task: (context: any) => Promise<void>
+  task: (context: FunctionContext) => Promise<void>
+}
+
+interface FunctionContext {
+  env: Record<string, string>
+  menuEnv: Record<string, string>
+  inputs: Record<string, any>
 }
 
 export type MenuItem = CommandMenu | LinkMenu | FunctionMenu
@@ -120,8 +126,9 @@ export async function searchMenu(config: CliConfig, { message } = { message: 'Se
     pageSize: 15,
     source: (input) => {
       const menus = getMenu(config)
-      if (!input)
+      if (!input) {
         return menus
+      }
       const choices = menus.filter((m) => {
         return m.name.toLowerCase().includes(input.toLowerCase())
       })
@@ -156,9 +163,9 @@ export async function resolveConfig(file?: string) {
     sources: file
       ? [{ files: file }]
       : [{
-        files: 'menuify.config',
-        extensions: ['ts', 'js', 'json'],
-      }],
+          files: 'menuify.config',
+          extensions: ['ts', 'js', 'json'],
+        }],
   })
 
   const { config, sources } = result
@@ -171,7 +178,6 @@ export async function resolveConfig(file?: string) {
     await createSampleConfig()
     process.exit(0)
   }
-
 
   return result
 }
@@ -226,7 +232,7 @@ export function initConfig(options: InitCfgOpt = {}): void {
   // For non-JSON types, we need to adapt the module syntax
   if (type !== 'json') {
     let content = readFileSync(source, 'utf-8')
-    
+
     // Handle TypeScript variants
     if (['mts', 'cts', 'ts'].includes(type)) {
       // Template is already in TypeScript format
