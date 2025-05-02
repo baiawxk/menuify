@@ -1,3 +1,5 @@
 import { defineConfig } from 'chq-eslint'
 
-export default defineConfig()
+export default defineConfig({
+  gitignore: false,
+})
