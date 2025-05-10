@@ -1,4 +1,4 @@
-import type { CliConfig, MenuItem } from './core'
+import type { CliConfig, MenuItem } from './types'
 import { search } from '@inquirer/prompts'
 import boxen from 'boxen'
 import chalk from 'chalk'
@@ -73,11 +73,8 @@ function formatMenuChoices(menus: MenuItem[], options: DisplayOptions): Array<{
 function formatMenuName(menu: MenuItem): string {
   const icon = getMenuTypeIcon(menu.type)
   const name = menu.name
-  const dependencies = menu.dependsOn?.length
-    ? chalk.gray(` (deps: ${menu.dependsOn.join(', ')})`)
-    : ''
 
-  return `${icon} ${name}${dependencies}`
+  return `${icon} ${name}`
 }
 
 function formatMenuDescription(menu: MenuItem, options: DisplayOptions): string | undefined {

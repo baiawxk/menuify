@@ -1,4 +1,4 @@
-import type { CommandMenu, ExecutionContext, MenuItem } from '../core'
+import type { CommandMenu, ExecutionContext, MenuItem } from '../types'
 import { cwd } from 'node:process'
 import { execa } from 'execa'
 import open from 'open'
@@ -6,13 +6,15 @@ import { EnvResolver } from '../envResolver'
 
 export class TaskHandler {
   private envResolver: EnvResolver
+  private readonly isDebug: boolean
 
   constructor() {
     this.envResolver = new EnvResolver()
+    this.isDebug = process.env.DEBUG === 'true'
   }
 
   async executeMenuItem(menu: MenuItem, context: ExecutionContext): Promise<void> {
-    if (context.debug) {
+    if (this.isDebug) {
       console.log(`[DEBUG] Executing menu item: ${menu.name} (${menu.type})`)
     }
 
@@ -36,7 +38,7 @@ export class TaskHandler {
           throw new Error(`Unsupported menu type: ${menu}`)
       }
 
-      if (context.debug) {
+      if (this.isDebug) {
         console.log(`[DEBUG] Menu item ${menu.name} executed successfully`)
       }
     }
@@ -47,35 +49,20 @@ export class TaskHandler {
   }
 
   private async executeCommand(menu: CommandMenu, context: ExecutionContext): Promise<void> {
-    const commands = Array.isArray(menu.task) ? menu.task : [menu.task]
-
-    for (const cmd of commands) {
-      const resolvedCmd = this.envResolver.resolve(cmd) as string
-      if (context.debug) {
-        console.log(`[DEBUG] Executing command: ${resolvedCmd}`)
-      }
-
-      await execa(resolvedCmd, {
-        shell: true,
-        stdio: 'inherit',
-        cwd: menu.options?.cwd || cwd(),
-        env: { ...process.env, ...context.env },
-      })
+    const resolvedCmd = this.envResolver.resolve(menu.task) as string
+    if (this.isDebug) {
+      console.log(`[DEBUG] Executing command: ${resolvedCmd}`)
     }
+
+    await execa(resolvedCmd, {
+      shell: true,
+      stdio: 'inherit',
+      cwd: menu.options?.cwd || cwd(),
+      env: { ...process.env, ...context.env },
+    })
   }
 
-  private async executeLink(url: string | string[]): Promise<void> {
-    if (Array.isArray(url)) {
-      for (const u of url) {
-        await this.executeLink(u)
-      }
-      return
-    }
-
-    if (typeof url !== 'string') {
-      throw new TypeError('Link URL must be a string')
-    }
-
+  private async executeLink(url: string): Promise<void> {
     const resolvedUrl = this.envResolver.resolve(url) as string
     await open(resolvedUrl)
   }

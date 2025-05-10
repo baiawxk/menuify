@@ -1,3 +1,4 @@
+import type { CliConfig, CommandMenu, FunctionMenu, LinkMenu, MenuItem } from './types'
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
@@ -5,63 +6,6 @@ import { fileURLToPath } from 'node:url'
 import { confirm, search } from '@inquirer/prompts'
 import { loadConfig } from 'unconfig'
 import { TaskRunner } from './taskRunner'
-
-export type TaskInputType = 'promptString' | 'pickString' | 'confirm' | 'multiSelect'
-
-export interface TaskInput {
-  id: string
-  type: TaskInputType
-  description?: string
-  default?: string
-  options?: string[]
-  joinSymbol?: string
-}
-
-export type TaskValue = string | string[] | ((context: any) => Promise<void>)
-
-export interface BaseMenu {
-  name: string
-  inputs?: TaskInput[]
-  runMode?: 'serial' | 'parallel'
-  confirmMsg?: string
-  show?: boolean
-  description?: string
-  group?: string
-}
-
-export interface CommandMenu extends BaseMenu {
-  type: 'command'
-  task: string | string[]
-  options?: {
-    cwd?: string
-  }
-}
-
-export interface LinkMenu extends BaseMenu {
-  type: 'link'
-  task: string | string[]
-}
-
-export interface FunctionMenu extends BaseMenu {
-  type: 'function'
-  task: (context: FunctionContext) => Promise<void>
-}
-
-interface FunctionContext {
-  env: Record<string, string>
-  inputs: Record<string, any>
-}
-
-export type MenuItem = CommandMenu | LinkMenu | FunctionMenu
-
-export interface ExecutionContext {
-  env: Record<string, string>
-  inputs?: Record<string, unknown>
-}
-
-export interface CliConfig {
-  menus?: MenuItem[]
-}
 
 export function defineConfig(config: CliConfig): CliConfig {
   return config

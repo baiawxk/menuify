@@ -1,4 +1,4 @@
-import type { MenuItem, CliConfig } from '../src/core'
+import type { CliConfig, MenuItem } from '../src/core'
 import { search } from '@inquirer/prompts'
 import { describe, expect, it, vi } from 'vitest'
 import { displayMenu, searchMenu } from '../src/display'
@@ -24,7 +24,6 @@ describe('display', () => {
         name: 'Test Function',
         type: 'function',
         task: async () => {},
-        dependsOn: ['Test Command'],
       },
       {
         name: 'Test Link',

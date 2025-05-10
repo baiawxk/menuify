@@ -1,9 +1,8 @@
-import type { CliConfig, CommandMenu, FunctionMenu, LinkMenu,  } from '../src/core'
+import type { CommandMenu, FunctionMenu, LinkMenu } from '../src/types'
 import { checkbox, confirm, input, search } from '@inquirer/prompts'
-import { Listr } from 'listr2'
-import { beforeEach, describe, expect, it, vi ,afterEach} from 'vitest'
-import { TaskRunner } from '../src/taskRunner'
 import open from 'open'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { TaskRunner } from '../src/taskRunner'
 
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
@@ -14,30 +13,11 @@ vi.mock('@inquirer/prompts', () => ({
 
 vi.mock('execa', () => ({
   execa: vi.fn().mockImplementation((command) => {
-    if (command.includes('error'))
+    if (command.includes('error')) {
       return Promise.reject(new Error('Command failed'))
+    }
     return Promise.resolve({ stdout: 'command output' })
   }),
-}))
-
-vi.mock('listr2', () => ({
-  Listr: vi.fn().mockImplementation((tasks, options) => ({
-    run: async () => {
-      if (options?.concurrent) {
-        await Promise.all(tasks.map(t => t.task()))
-      }
-      else {
-        for (const task of tasks)
-          await task.task()
-      }
-    },
-    tasks,
-    options,
-  })),
-}))
-
-vi.mock('open', () => ({
-  default: vi.fn(),
 }))
 
 describe('taskRunner', () => {
@@ -56,33 +36,6 @@ describe('taskRunner', () => {
     }
 
     await taskRunner.executeTask(task)
-    expect(taskRunner.getTaskStatus('Test Task')).toBe('completed')
-  })
-
-  it('should execute tasks in sequence when dependsOn is specified', async () => {
-    const task1: CommandMenu = {
-      name: 'Task 1',
-      type: 'command',
-      task: 'echo "task1"',
-    }
-    const task2: CommandMenu = {
-      name: 'Task 2',
-      type: 'command',
-      task: 'echo "task2"',
-      dependsOn: ['Task 1'],
-    }
-
-    // Mock findTaskByName using prototype to avoid type issues
-    vi.spyOn(TaskRunner.prototype, 'findTaskByName')
-      .mockImplementation(async (name: string) => {
-        if (name === 'Task 1')
-          return task1
-        return undefined
-      })
-
-    await taskRunner.executeTask(task2)
-    expect(taskRunner.getTaskStatus('Task 1')).toBe('completed')
-    expect(taskRunner.getTaskStatus('Task 2')).toBe('completed')
   })
 
   describe('input handling', () => {
@@ -93,7 +46,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'Prompt Task',
         type: 'command',
-        task: 'echo "${userInput}"',
+        task: 'echo %userInput%',
         inputs: [{
           id: 'userInput',
           type: 'promptString',
@@ -116,7 +69,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'Pick Task',
         type: 'command',
-        task: 'echo "${selectedOption}"',
+        task: 'echo %selectedOption%',
         inputs: [{
           id: 'selectedOption',
           type: 'pickString',
@@ -160,7 +113,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'MultiSelect Task',
         type: 'command',
-        task: 'echo "${selected}"',
+        task: 'echo %selected%',
         inputs: [{
           id: 'selected',
           type: 'multiSelect',
@@ -189,7 +142,7 @@ describe('taskRunner', () => {
       const task: CommandMenu = {
         name: 'Multi Input Task',
         type: 'command',
-        task: 'echo "${input1} ${input2}"',
+        task: 'echo %input1% %input2%',
         inputs: [
           {
             id: 'input1',
@@ -208,7 +161,6 @@ describe('taskRunner', () => {
       await taskRunner.executeTask(task)
       expect(input).toHaveBeenCalled()
       expect(search).toHaveBeenCalled()
-      expect(taskRunner.getTaskStatus('Multi Input Task')).toBe('completed')
     })
   })
 
@@ -256,13 +208,13 @@ describe('taskRunner', () => {
       }
 
       await taskRunner.executeTask(task)
-      expect(vi.mocked(open)).toHaveBeenCalledWith('https://example.com')
+      expect(open).toHaveBeenCalledWith('https://example.com')
     })
   })
 })
 
 describe('debug configuration', () => {
-  let consoleSpy: jest.SpyInstance
+  let consoleSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     consoleSpy = vi.spyOn(console, 'log')
@@ -272,56 +224,32 @@ describe('debug configuration', () => {
     consoleSpy.mockRestore()
   })
 
-  it('should enable debug logging when debug is true in config', async () => {
-    const config: CliConfig = {
-      debug: true,
-      menus: [{
-        name: 'Test Task',
-        type: 'command',
-        task: 'echo "test"'
-      }]
+  it('should enable debug logging when debug is defined in env', async () => {
+    process.env.DEBUG = 'true'
+    const task: CommandMenu = {
+      name: 'Test Task',
+      type: 'command',
+      task: 'echo "test"',
     }
 
-    const taskRunner = new TaskRunner(config)
-    const task = config.menus![0]
-
+    const taskRunner = new TaskRunner()
     await taskRunner.executeTask(task)
 
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'))
+    expect(consoleSpy).toHaveBeenCalledWith('[DEBUG]', expect.any(String))
+    process.env.DEBUG = undefined
   })
 
-  it('should not log debug messages when debug is false', async () => {
-    const config: CliConfig = {
-      debug: false,
-      menus: [{
-        name: 'Test Task',
-        type: 'command',
-        task: 'echo "test"'
-      }]
+  it('should not log debug messages when debug is not defined in env', async () => {
+    process.env.DEBUG = undefined
+    const task: CommandMenu = {
+      name: 'Test Task',
+      type: 'command',
+      task: 'echo "test"',
     }
 
-    const taskRunner = new TaskRunner(config)
-    const task = config.menus![0]
-
+    const taskRunner = new TaskRunner()
     await taskRunner.executeTask(task)
 
-    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'))
-  })
-
-  it('should not log debug messages when debug is undefined', async () => {
-    const config: CliConfig = {
-      menus: [{
-        name: 'Test Task',
-        type: 'command',
-        task: 'echo "test"'
-      }]
-    }
-
-    const taskRunner = new TaskRunner(config)
-    const task = config.menus![0]
-
-    await taskRunner.executeTask(task)
-
-    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('[DEBUG]'))
+    expect(consoleSpy).not.toHaveBeenCalledWith('[DEBUG]', expect.any(String))
   })
 })

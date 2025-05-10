@@ -1,6 +1,5 @@
-import type { CliConfig, ExecutionContext, MenuItem } from './core'
+import type { CliConfig, ExecutionContext, MenuItem } from './types'
 import { confirm } from '@inquirer/prompts'
-import { Listr } from 'listr2'
 import { InputHandler } from './handlers/inputHandler'
 import { TaskHandler } from './handlers/taskHandler'
 
@@ -97,19 +96,9 @@ export class TaskRunner {
     }
   }
 
-  async executeMenus(menus: MenuItem[], runMode: 'serial' | 'parallel' = 'serial'): Promise<void> {
-    const tasks = this.createListrTasks(menus)
-    const listr = new Listr(tasks, {
-      concurrent: runMode === 'parallel',
-      exitOnError: false,
-    })
-    await listr.run()
-  }
-
-  private createListrTasks(menus: MenuItem[]) {
-    return menus.map(menu => ({
-      title: menu.name,
-      task: async () => await this.processMenu(menu),
-    }))
+  async executeMenus(menus: MenuItem[]): Promise<void> {
+    for (const menu of menus) {
+      await this.executeTask(menu)
+    }
   }
 }

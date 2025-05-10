@@ -1,7 +1,13 @@
-import type { ExecutionContext, TaskInput } from '../core'
+import type { ExecutionContext, TaskInput } from '../types'
 import { checkbox, confirm, input, search } from '@inquirer/prompts'
 
 export class InputHandler {
+  private readonly isDebug: boolean
+
+  constructor() {
+    this.isDebug = process.env.DEBUG === 'true'
+  }
+
   /**
    * Process a single input definition
    */
@@ -31,7 +37,7 @@ export class InputHandler {
     }
     context.inputs[taskInput.id] = result
 
-    if (context.debug) {
+    if (this.isDebug) {
       console.log(`[DEBUG] Input ${taskInput.id} processed with value:`, result)
     }
 
