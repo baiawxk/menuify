@@ -1,6 +1,8 @@
-import type { CommandMenu, ExecutionContext, MenuItem } from '../types'
+import type { CommandMenu, ConcurrentlyMenu, ExecutionContext, Listr2Menu, MenuItem } from '../types'
 import { cwd } from 'node:process'
+import concurrently from 'concurrently'
 import { execa } from 'execa'
+import { Listr } from 'listr2'
 import open from 'open'
 import { EnvResolver } from '../envResolver'
 
@@ -25,14 +27,20 @@ export class TaskHandler {
 
     try {
       switch (menu.type) {
-        case 'command':
+        case 'execa':
           await this.executeCommand(menu, context)
           break
-        case 'link':
+        case 'open':
           await this.executeLink(menu.task)
           break
         case 'function':
           await this.executeFunction(menu.task, context)
+          break
+        case 'listr2':
+          await this.executeListr2(menu)
+          break
+        case 'concurrently':
+          await this.executeConcurrently(menu)
           break
         default:
           throw new Error(`Unsupported menu type: ${menu}`)
@@ -78,5 +86,14 @@ export class TaskHandler {
     }
 
     await fn(ctx)
+  }
+
+  private async executeListr2(menu: Listr2Menu): Promise<void> {
+    const runner = new Listr(menu.task, menu.options)
+    await runner.run()
+  }
+
+  private async executeConcurrently(menu: ConcurrentlyMenu): Promise<void> {
+    await concurrently(menu.task, menu.options)
   }
 }

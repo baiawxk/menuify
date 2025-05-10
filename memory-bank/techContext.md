@@ -1,51 +1,27 @@
 # 技术上下文
 
 ## 使用的技术
-1. 核心技术栈
-   - TypeScript：主要开发语言
-   - Node.js：运行环境
-   - pnpm：包管理工具
+1. 核心依赖
+   - execa：命令执行
+   - open：URL打开
+   - listr2：任务列表
+   - concurrently：并行任务
 
-2. 主要依赖
-   - dotenv：环境变量加载
-   - radash：工具函数库
-   - type-fest：类型定义
-   - vitest：测试框架
-
-## 开发环境设置
-1. 开发工具
-   - VSCode：推荐的IDE
-   - Node.js：>=16
-   - pnpm：包管理器
-
-2. 项目结构
-   ```
-   src/
-   ├── core.ts             # 核心功能
-   ├── display.ts         # 显示管理
-   ├── editor.ts         # 编辑器
-   ├── envResolver.ts    # 环境解析
-   ├── generator.ts      # 生成器
-   ├── index.ts         # 入口
-   ├── taskRunner.ts    # 任务运行
-   ├── adapters/        # 适配器
-   ├── handlers/        # 处理器
-   └── tmpl/           # 模板
-   ```
+2. 类型系统
+   - TypeScript：基础类型
+   - listr2类型：任务列表类型定义
+   - concurrently类型：并行任务类型定义
 
 ## 技术约束
-1. Node.js版本要求
-   - 最低版本：16.x
-   - 推荐版本：18.x或更高
+1. 执行器限制
+   - listr2：直接使用原生任务定义
+   - concurrently：使用原生命令输入
+   - 保持类型安全和一致性
 
-2. 开发规范
-   - 使用TypeScript严格模式
-   - 遵循ESLint规则
-   - 必须包含单元测试
-
-3. 兼容性要求
-   - 支持主流操作系统(Windows, macOS, Linux)
-   - 支持不同shell环境
+2. 类型系统要求
+   - strict 模式启用
+   - 完整的类型定义
+   - 精确的类型推导
 
 ## 依赖管理
 1. 核心依赖

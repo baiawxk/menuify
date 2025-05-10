@@ -45,6 +45,7 @@
     "cac": "^6.7.14",
     "chalk": "^5.4.1",
     "chq-eslint": "^0.0.8",
+    "concurrently": "^9.1.2",
     "dotenv": "^16.5.0",
     "execa": "^9.5.2",
     "listr2": "^8.3.2",
