@@ -1,26 +1,14 @@
-import type { CliConfig, CommandMenu, FunctionMenu, LinkMenu, MenuItem } from './types'
+import type { CliConfig, MenuItem } from './types'
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { confirm, search } from '@inquirer/prompts'
 import { loadConfig } from 'unconfig'
-import { TaskRunner } from './taskRunner'
+import { executeMenuItem } from './handlers/taskHandler'
 
 export function defineConfig(config: CliConfig): CliConfig {
   return config
-}
-
-export function isCommandMenuItem(menu: MenuItem): menu is CommandMenu {
-  return menu.type === 'command'
-}
-
-export function isLinkMenuItem(menu: MenuItem): menu is LinkMenu {
-  return menu.type === 'link'
-}
-
-export function isFunctionMenuItem(menu: MenuItem): menu is FunctionMenu {
-  return menu.type === 'function'
 }
 
 export interface RunCfgOpt {
@@ -31,35 +19,33 @@ export interface RunCfgOpt {
 export async function runConfig(options: RunCfgOpt = {}): Promise<void> {
   const resolved = await resolveConfig(options.config)
   const menu = await findMenuBy(resolved.config, options.name)
-
-  const taskRunner = new TaskRunner(resolved.config)
-  await taskRunner.executeTask(menu)
+  await executeMenuItem(menu)
 }
 
 async function findMenuBy(config: CliConfig, name?: string) {
   let menu: MenuItem | undefined
 
   if (name) {
-    // If name is provided, find the menu directly
+    // 如果提供了名称，直接查找菜单
     menu = config.menus?.find(m => m.name === name)
     if (!menu) {
-      console.error(`Menu "${name}" not found`)
+      console.error(`未找到菜单 "${name}"`)
       process.exit(1)
     }
   }
   else {
-    // Otherwise use interactive search
+    // 否则使用交互式搜索
     menu = await searchMenu(config)
   }
   return menu
 }
 
-export async function searchMenu(config: CliConfig, { message } = { message: 'Select a command to run' }) {
-  const menu = await search<MenuItem>({
+export async function searchMenu(config: CliConfig, { message } = { message: 'Select a menu to run' }) {
+  const menus = getMenu(config)
+  return await search<MenuItem>({
     message,
     pageSize: 15,
     source: (input) => {
-      const menus = getMenu(config)
       if (!input) {
         return menus
       }
@@ -69,8 +55,6 @@ export async function searchMenu(config: CliConfig, { message } = { message: 'Se
       return choices
     },
   })
-  // console.log('🚀 ~ searchMenu ~ menu:', menu)
-  return menu
 }
 
 async function createSampleConfig() {
@@ -97,9 +81,9 @@ export async function resolveConfig(file?: string) {
     sources: file
       ? [{ files: file }]
       : [{
-          files: 'menuify.config',
-          extensions: ['ts', 'js', 'json'],
-        }],
+        files: 'menuify.config',
+        extensions: ['ts', 'js', 'json'],
+      }],
   })
 
   const { config, sources } = result
@@ -117,7 +101,7 @@ export async function resolveConfig(file?: string) {
 }
 
 function getMenu(config: CliConfig) {
-  return config.menus?.filter(m => m.show === undefined || m.show).map((m) => {
+  return config.menus?.map((m) => {
     const { name } = m
     return {
       name,

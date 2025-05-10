@@ -2,28 +2,29 @@
  * 菜单和任务相关的所有类型定义
  */
 
-/** 任务输入类型 */
-export type TaskInputType = 'promptString' | 'pickString' | 'confirm' | 'multiSelect'
-
-/** 任务输入配置 */
-export interface TaskInput {
-  id: string
-  type: TaskInputType
-  description?: string
-  default?: string
-  options?: string[]
-  joinSymbol?: string
-}
-
 /** 基础菜单配置 */
-export interface BaseMenu {
+interface BaseMenu {
   name: string
-  inputs?: TaskInput[]
   confirmMsg?: string
 }
 
+/** 用户输入配置 */
+export interface TaskInput {
+  name: string
+  message?: string
+  type?: 'input' | 'list'
+  choices?: string[]
+  default?: string
+  validate?: (input: any) => boolean | string | Promise<boolean | string>
+}
+
+/** 静态菜单项基础配置 */
+interface InputAble {
+  inputs?: TaskInput[]
+}
+
 /** Execa命令执行菜单配置 */
-export interface ExecaMenu extends BaseMenu {
+export interface ExecaMenu extends BaseMenu, InputAble {
   type: 'execa'
   task: string
   options?: {
@@ -32,82 +33,42 @@ export interface ExecaMenu extends BaseMenu {
 }
 
 /** Open链接菜单配置 */
-export interface OpenMenu extends BaseMenu {
+export interface OpenMenu extends BaseMenu, InputAble {
   type: 'open'
   task: string
-}
-
-/** 函数菜单配置 */
-export interface FunctionMenu extends BaseMenu {
-  type: 'function'
-  task: (context: FunctionContext) => Promise<void>
-}
-
-/** Listr2任务列表菜单配置 */
-export interface Listr2Menu extends BaseMenu {
-  type: 'listr2'
-  task: import('listr2').ListrTask[]
-  options?: import('listr2').ListrOptions
+  options?: import('open').Options
 }
 
 /** Concurrently并行任务菜单配置 */
-export interface ConcurrentlyMenu extends BaseMenu {
+export interface ConcurrentlyMenu extends BaseMenu, InputAble {
   type: 'concurrently'
-  task: import('concurrently').ConcurrentlyCommandInput[]
+  task: string[] | import('concurrently').ConcurrentlyCommandInput[]
   options?: import('concurrently').ConcurrentlyOptions
 }
 
-/** 函数上下文 */
-export interface FunctionContext {
-  env: Record<string, string>
-  inputs: Record<string, any>
+/** 函数菜单配置 */
+export interface FunctionMenu extends BaseMenu, InputAble {
+  type: 'function'
+  task: (context: Variables) => Promise<void>
 }
 
-/** Listr2任务配置 */
-export interface Listr2Task {
-  title: string
-  task: string | ((ctx: FunctionContext) => Promise<void>)
-}
-
-/** Listr2选项 */
-export interface Listr2Options {
-  concurrent?: boolean
-  exitOnError?: boolean
-  renderer?: 'default' | 'verbose' | 'silent'
-}
-
-/** Concurrently选项 */
-export interface ConcurrentlyOptions {
-  maxProcesses?: number
-  raw?: boolean
-  killOthers?: string[]
-  restartTries?: number
-  restartDelay?: number
+/** Listr2任务列表菜单配置 */
+export interface Listr2Menu extends BaseMenu, InputAble {
+  type: 'listr2'
+  tasks: import('listr2').ListrTask[]
+  options?: import('listr2').ListrOptions
 }
 
 /** 菜单项类型 */
-export type MenuItem = ExecaMenu | OpenMenu | FunctionMenu | Listr2Menu | ConcurrentlyMenu
+export type MenuItem = ExecaMenu | OpenMenu | ConcurrentlyMenu | FunctionMenu | Listr2Menu
 
 /** CLI 配置 */
 export interface CliConfig {
   menus?: MenuItem[]
 }
 
-/** 执行上下文 */
-export interface ExecutionContext {
-  env: Record<string, string>
-  inputs?: Record<string, unknown>
-}
+/** 变量集合类型 */
+export type Variables = Record<string, string>
 
-/** 任务处理器配置 */
-export interface TaskHandlerConfig {
-  inputs?: TaskInput[]
-  env?: Record<string, string>
-}
-
-/** 任务处理器上下文 */
-export interface TaskHandlerContext {
-  cwd?: string
-  inputs?: Record<string, any>
-  env: Record<string, string>
-}
+/** 简单的字符串转换函数类型 */
+export type StringTransformer = (input: string, vars: Variables) => string

@@ -1,99 +1,110 @@
-import type { CommandMenu, ConcurrentlyMenu, ExecutionContext, Listr2Menu, MenuItem } from '../types'
+import type { ExecaMenu, Listr2Menu, MenuItem, Variables } from '../types'
 import { cwd } from 'node:process'
+import { confirm } from '@inquirer/prompts'
 import concurrently from 'concurrently'
+import dotenv from 'dotenv'
 import { execa } from 'execa'
 import { Listr } from 'listr2'
 import open from 'open'
-import { EnvResolver } from '../envResolver'
+import { promptInput } from '../utils/promptInput'
+import { transformString } from '../utils/stringTransformer'
 
-export class TaskHandler {
-  private envResolver: EnvResolver
-  private readonly isDebug: boolean
+dotenv.config()
 
-  constructor() {
-    this.envResolver = new EnvResolver()
-    this.isDebug = process.env.DEBUG === 'true'
+const isDebug = process.env.DEBUG === 'true'
+
+/**
+ * 获取环境变量
+ */
+function getEnvVariables(): Variables {
+  return Object.entries(process.env).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = value
+    }
+    return acc
+  }, {} as Variables)
+}
+
+/**
+ * 执行静态任务
+ */
+async function executeExecaTask(menu: ExecaMenu, variables: Variables): Promise<void> {
+  const resolvedTask = transformString(menu.task, variables)
+  if (isDebug) {
+    console.log('[DEBUG] 执行任务:', resolvedTask)
   }
+  await execa(resolvedTask, {
+    shell: true,
+    stdio: 'inherit',
+    cwd: menu.options?.cwd || cwd(),
+  })
+}
 
-  async executeMenuItem(menu: MenuItem, context: ExecutionContext): Promise<void> {
-    if (this.isDebug) {
-      console.log(`[DEBUG] Executing menu item: ${menu.name} (${menu.type})`)
+/**
+ * 执行菜单项
+ */
+export async function executeMenuItem(menu: MenuItem): Promise<void> {
+  try {
+    if (menu.confirmMsg) {
+      const confirmed = await confirm({ message: menu.confirmMsg })
+      if (!confirmed) {
+        console.log('任务已取消')
+        return
+      }
     }
 
-    // Initialize env resolver with current context
-    this.envResolver = new EnvResolver({
-      inputs: context.inputs,
-    })
+    // 1. 收集变量
+    const variables = getEnvVariables()
 
-    try {
-      switch (menu.type) {
-        case 'execa':
-          await this.executeCommand(menu, context)
-          break
-        case 'open':
-          await this.executeLink(menu.task)
-          break
-        case 'function':
-          await this.executeFunction(menu.task, context)
-          break
-        case 'listr2':
-          await this.executeListr2(menu)
-          break
-        case 'concurrently':
-          await this.executeConcurrently(menu)
-          break
-        default:
-          throw new Error(`Unsupported menu type: ${menu}`)
+    // 2. 处理用户输入
+    if ('inputs' in menu && menu.inputs?.length) {
+      for (const input of menu.inputs) {
+        const value = await promptInput(input)
+        if (value !== undefined) {
+          variables[input.name] = value
+        }
+      }
+    }
+
+    // 3. 执行任务
+    switch (menu.type) {
+      case 'execa':
+        await executeExecaTask(menu, variables)
+        break
+
+      case 'open':
+        await open(transformString(menu.task, variables), menu.options)
+        break
+
+      case 'concurrently': {
+        const tasks = Array.isArray(menu.task)
+          ? menu.task.map(cmd => typeof cmd === 'string'
+              ? { command: transformString(cmd, variables) }
+              : { ...cmd, command: transformString(cmd.command, variables) })
+          : menu.task
+        await concurrently(tasks, menu.options)
+        break
       }
 
-      if (this.isDebug) {
-        console.log(`[DEBUG] Menu item ${menu.name} executed successfully`)
-      }
+      case 'function':
+        await menu.task(variables)
+        break
+
+      case 'listr2':
+        await executeListr2(menu, variables)
+        break
+
+      default:
+        throw new Error(`不支持的任务类型`)
     }
-    catch (error) {
-      console.error(`Failed to execute menu item ${menu.name}:`, error)
-      throw error
-    }
   }
-
-  private async executeCommand(menu: CommandMenu, context: ExecutionContext): Promise<void> {
-    const resolvedCmd = this.envResolver.resolve(menu.task) as string
-    if (this.isDebug) {
-      console.log(`[DEBUG] Executing command: ${resolvedCmd}`)
-    }
-
-    await execa(resolvedCmd, {
-      shell: true,
-      stdio: 'inherit',
-      cwd: menu.options?.cwd || cwd(),
-      env: { ...process.env, ...context.env },
-    })
+  catch (error) {
+    console.error(`执行任务失败 ${menu.name}:`, error)
+    throw error
   }
+}
 
-  private async executeLink(url: string): Promise<void> {
-    const resolvedUrl = this.envResolver.resolve(url) as string
-    await open(resolvedUrl)
-  }
-
-  private async executeFunction(fn: unknown, context: ExecutionContext): Promise<void> {
-    if (typeof fn !== 'function') {
-      throw new TypeError('Task value must be a function for function type menu')
-    }
-
-    const ctx = {
-      env: { ...process.env, ...context.env },
-      inputs: context.inputs ? { ...context.inputs } : undefined,
-    }
-
-    await fn(ctx)
-  }
-
-  private async executeListr2(menu: Listr2Menu): Promise<void> {
-    const runner = new Listr(menu.task, menu.options)
-    await runner.run()
-  }
-
-  private async executeConcurrently(menu: ConcurrentlyMenu): Promise<void> {
-    await concurrently(menu.task, menu.options)
-  }
+async function executeListr2(menu: Listr2Menu, variables: Variables): Promise<void> {
+  const runner = new Listr(menu.tasks, menu.options)
+  await runner.run(variables)
 }
