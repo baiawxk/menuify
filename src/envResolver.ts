@@ -1,22 +1,29 @@
 import type { ExecutionContext, MenuItem, TaskValue } from './core'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { config } from 'dotenv'
 import { isEmpty } from 'radash'
 
 export interface EnvResolverOptions {
-  globalEnv?: Record<string, string>
-  menuEnv?: Record<string, string>
   inputs?: Record<string, unknown>
 }
 
 export class EnvResolver {
-  private readonly globalEnv: Record<string, string>
-  private readonly menuEnv: Record<string, string>
   private readonly inputs: Record<string, unknown>
 
   constructor(options: EnvResolverOptions = {}) {
-    this.globalEnv = options.globalEnv || {}
-    this.menuEnv = options.menuEnv || {}
+    this.loadDotEnv()
     this.inputs = options.inputs || {}
-    // console.log('🚀 ~ EnvResolver ~ constructor ~ options:', options)
+  }
+
+  private loadDotEnv() {
+    const envPaths = ['.env', '.env.local']
+    for (const path of envPaths) {
+      const fullPath = resolve(process.cwd(), path)
+      if (existsSync(fullPath)) {
+        config({ path: fullPath })
+      }
+    }
   }
 
   resolveMenu<T extends MenuItem>(menu: T): T {
@@ -67,8 +74,7 @@ export class EnvResolver {
     // Resolve variables in order of precedence
     let result = value
     result = this.processInputVariables(result)
-    result = this.processMenuVariables(result)
-    result = this.processGlobalVariables(result)
+    result = this.processEnvVariables(result)
 
     // Check for any unresolved variables
     this.validateNoUnresolvedVariables(result)
@@ -84,27 +90,11 @@ export class EnvResolver {
     if (isEmpty(this.inputs)) {
       return value
     }
-    else {
-      return this.replaceVariables(value, this.inputs, '{', '}')
-    }
+    return this.replaceVariables(value, this.inputs, '{', '}')
   }
 
-  private processMenuVariables(value: string): string {
-    if (isEmpty(this.menuEnv)) {
-      return value
-    }
-    else {
-      return this.replaceVariables(value, this.menuEnv, '%', '%')
-    }
-  }
-
-  private processGlobalVariables(value: string): string {
-    if (isEmpty(this.globalEnv)) {
-      return value
-    }
-    else {
-      return this.replaceVariables(value, this.globalEnv, '%', '%')
-    }
+  private processEnvVariables(value: string): string {
+    return this.replaceVariables(value, process.env, '%', '%')
   }
 
   private replaceVariables(
@@ -121,9 +111,9 @@ export class EnvResolver {
   }
 
   private createVariablePattern(prefix: string, suffix: string): RegExp {
-    const escapedPrefix = this.escapeRegExp(prefix)
-    const escapedSuffix = this.escapeRegExp(suffix)
-    return new RegExp(`${escapedPrefix}([\\w-]+)${escapedSuffix}`, 'g')
+    const prefixEscaped = this.escapeRegExp(prefix)
+    const suffixEscaped = this.escapeRegExp(suffix)
+    return new RegExp(`${prefixEscaped}([\\w-]+)${suffixEscaped}`, 'g')
   }
 
   private escapeRegExp(str: string): string {
@@ -134,8 +124,7 @@ export class EnvResolver {
     const unresolved = this.findUnresolvedVariables(str)
     if (unresolved.length > 0) {
       throw new Error(
-        'Unresolved variables found: '
-        + `${unresolved.join(', ')}\n`
+        `Unresolved variables found: ${unresolved.join(', ')}\n`
         + 'Make sure all required variables are defined in the appropriate scope.',
       )
     }
@@ -144,7 +133,7 @@ export class EnvResolver {
   private findUnresolvedVariables(str: string): string[] {
     const patterns = [
       /\{([\w-]+)\}/g, // Input variables
-      /%([\w-]+)%/g, // Global variables
+      /%([\w-]+)%/g, // Environment variables
     ]
 
     const unresolved = new Set<string>()
@@ -158,23 +147,7 @@ export class EnvResolver {
     return Array.from(unresolved)
   }
 
-  createContext(): ExecutionContext {
-    return {
-      env: { ...this.globalEnv },
-      menuEnv: { ...this.menuEnv },
-      inputs: { ...this.inputs },
-    }
-  }
-
   setInputs(inputs: Record<string, unknown>): void {
     Object.assign(this.inputs, inputs)
-  }
-
-  setMenuEnv(menuEnv: Record<string, string>): void {
-    Object.assign(this.menuEnv, menuEnv)
-  }
-
-  setGlobalEnv(globalEnv: Record<string, string>): void {
-    Object.assign(this.globalEnv, globalEnv)
   }
 }

@@ -2,9 +2,6 @@ import { defineConfig } from 'menuify'
 
 export default defineConfig({
   debug: false,
-  env: {
-    NODE_ENV: 'development',
-  },
   menus: [
     {
       name: 'Build Project',

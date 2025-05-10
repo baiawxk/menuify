@@ -1,4 +1,4 @@
-import type { CommandMenu, ExecutionContext, FunctionMenu, LinkMenu, MenuItem } from '../core'
+import type { CommandMenu, ExecutionContext, MenuItem } from '../core'
 import { cwd } from 'node:process'
 import { execa } from 'execa'
 import open from 'open'
@@ -16,12 +16,8 @@ export class TaskHandler {
       console.log(`[DEBUG] Executing menu item: ${menu.name} (${menu.type})`)
     }
 
-    // Initialize env resolver with current context and menu env
-    // Menu env should override global env
-    const menuEnv = { ...context.menuEnv, ...menu.env || {} }
+    // Initialize env resolver with current context
     this.envResolver = new EnvResolver({
-      globalEnv: context.env,
-      menuEnv,
       inputs: context.inputs,
     })
 
@@ -45,9 +41,7 @@ export class TaskHandler {
       }
     }
     catch (error) {
-      if (context.debug) {
-        console.error(`[DEBUG] Error executing menu item ${menu.name}:`, error)
-      }
+      console.error(`Failed to execute menu item ${menu.name}:`, error)
       throw error
     }
   }
@@ -64,11 +58,8 @@ export class TaskHandler {
       await execa(resolvedCmd, {
         shell: true,
         stdio: 'inherit',
-        cwd: menu.options?.cwd,
-        env: {
-          ...context.env,
-          ...context.menuEnv,
-        },
+        cwd: menu.options?.cwd || cwd(),
+        env: { ...process.env, ...context.env },
       })
     }
   }
@@ -95,8 +86,7 @@ export class TaskHandler {
     }
 
     const ctx = {
-      env: { ...context.env },
-      menuEnv: { ...context.menuEnv },
+      env: { ...process.env, ...context.env },
       inputs: context.inputs ? { ...context.inputs } : undefined,
     }
 

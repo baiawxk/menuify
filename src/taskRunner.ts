@@ -1,94 +1,53 @@
-import type { CliConfig, ExecutionContext, MenuItem, TaskStatus } from './core'
-import { confirm, input } from '@inquirer/prompts'
+import type { CliConfig, ExecutionContext, MenuItem } from './core'
+import { confirm } from '@inquirer/prompts'
 import { Listr } from 'listr2'
-import { DependencyResolver } from './dependencyResolver'
 import { InputHandler } from './handlers/inputHandler'
 import { TaskHandler } from './handlers/taskHandler'
 
 export class TaskRunner {
   private readonly context: ExecutionContext
-  private readonly dependencyResolver: DependencyResolver
   private readonly inputHandler: InputHandler
   private readonly taskHandler: TaskHandler
+  private readonly isDebug: boolean
 
   constructor(private readonly config: CliConfig = {}) {
+    this.isDebug = process.env.DEBUG === 'true'
     this.context = this.initializeContext()
-    this.dependencyResolver = new DependencyResolver(config.menus || [])
     this.inputHandler = new InputHandler()
     this.taskHandler = new TaskHandler()
 
-    this.logDebug('TaskRunner initialized with global env:', this.context.env)
+    this.logDebug('TaskRunner initialized')
   }
 
   private initializeContext(): ExecutionContext {
     return {
-      env: this.config.env || {},
-      menuEnv: {},
+      env: Object.fromEntries(
+        Object.entries(process.env)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, v as string]),
+      ),
       inputs: {},
-      taskStatuses: new Map<string, TaskStatus>(),
-      debug: this.config.debug,
     }
   }
 
   private logDebug(...args: any[]): void {
-    if (this.context.debug) {
+    if (this.isDebug) {
       console.log('[DEBUG]', ...args)
     }
-  }
-
-  getTaskStatus(taskName: string): TaskStatus {
-    return this.context.taskStatuses?.get(taskName) || 'pending'
-  }
-
-  private async findTaskByName(name: string): Promise<MenuItem> {
-    const task = this.dependencyResolver.findMenu(name)
-    if (!task) {
-      throw new Error(`Task not found: ${name}`)
-    }
-    return task
   }
 
   async executeTask(task: MenuItem): Promise<void> {
     try {
       this.logDebug(`Executing task: ${task.name}`)
-
-      await this.processDependencies(task)
-      await this.executeTaskWithStatus(task)
-
+      await this.processMenu(task)
       this.logDebug(`Task ${task.name} completed successfully`)
     }
     catch (error) {
-      this.handleTaskError(task.name, error)
-      throw error
-    }
-  }
-
-  private async executeTaskWithStatus(task: MenuItem): Promise<void> {
-    this.context.taskStatuses?.set(task.name, 'running')
-    await this.processMenu(task)
-    this.context.taskStatuses?.set(task.name, 'completed')
-  }
-
-  private handleTaskError(taskName: string, error: unknown): void {
-    this.context.taskStatuses?.set(taskName, 'failed')
-    this.logDebug(`Task ${taskName} failed:`, error)
-    if (error instanceof Error) {
-      this.logDebug(error.stack)
-    }
-  }
-
-  private async processDependencies(task: MenuItem): Promise<void> {
-    if (!task.dependsOn?.length) {
-      return
-    }
-
-    this.logDebug(`${task.name} has dependencies: ${task.dependsOn.join(', ')}`)
-
-    for (const depName of task.dependsOn) {
-      const depTask = await this.findTaskByName(depName)
-      if (depTask) {
-        await this.executeTask(depTask)
+      this.logDebug(`Task ${task.name} failed:`, error)
+      if (error instanceof Error) {
+        this.logDebug(error.stack)
       }
+      throw error
     }
   }
 
@@ -98,7 +57,7 @@ export class TaskRunner {
     try {
       this.logDebug(`Processing menu: ${menu.name}`)
       this.logDebug(`Processing taskContext ${menu.name}`, taskContext)
-      // Add confirmation check
+
       if (menu.confirmMsg) {
         const confirmed = await confirm({
           message: menu.confirmMsg,
@@ -112,7 +71,6 @@ export class TaskRunner {
 
       await this.processMenuInputs(menu, taskContext)
       await this.taskHandler.executeMenuItem(menu, taskContext)
-      this.updateGlobalContext(taskContext)
     }
     finally {
       this.logDebug('Menu execution completed, cleaning up context')
@@ -122,7 +80,7 @@ export class TaskRunner {
   private createTaskContext(menu: MenuItem): ExecutionContext {
     return {
       ...this.context,
-      menuEnv: menu.env || {},
+      inputs: {},
     }
   }
 
@@ -137,10 +95,6 @@ export class TaskRunner {
     for (const input of menu.inputs) {
       await this.inputHandler.processInput(input, taskContext)
     }
-  }
-
-  private updateGlobalContext(taskContext: ExecutionContext): void {
-    this.context.taskStatuses = taskContext.taskStatuses
   }
 
   async executeMenus(menus: MenuItem[], runMode: 'serial' | 'parallel' = 'serial'): Promise<void> {

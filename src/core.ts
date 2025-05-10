@@ -21,9 +21,7 @@ export type TaskValue = string | string[] | ((context: any) => Promise<void>)
 
 export interface BaseMenu {
   name: string
-  dependsOn?: string[]
   inputs?: TaskInput[]
-  env?: Record<string, string>
   runMode?: 'serial' | 'parallel'
   confirmMsg?: string
   show?: boolean
@@ -51,7 +49,6 @@ export interface FunctionMenu extends BaseMenu {
 
 interface FunctionContext {
   env: Record<string, string>
-  menuEnv: Record<string, string>
   inputs: Record<string, any>
 }
 
@@ -59,17 +56,10 @@ export type MenuItem = CommandMenu | LinkMenu | FunctionMenu
 
 export interface ExecutionContext {
   env: Record<string, string>
-  menuEnv: Record<string, string>
   inputs?: Record<string, unknown>
-  taskStatuses?: Map<string, TaskStatus>
-  debug?: boolean
 }
 
-export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed'
-
 export interface CliConfig {
-  debug?: boolean
-  env?: Record<string, string>
   menus?: MenuItem[]
 }
 
