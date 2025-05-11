@@ -226,17 +226,6 @@ interface TaskInput {
 }
 ```
 
-### Task Dependencies
-
-```typescript
-{
-  name: 'Deploy',
-  type: 'execa',
-  shell: 'npm run deploy',
-  dependsOn: ['Build', 'Test'],
-}
-```
-
 ## 🛠️ CLI Options
 
 ```bash
