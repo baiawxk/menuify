@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, copyFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { initConfig } from '../src/core'
 
@@ -34,36 +34,8 @@ export default defineConfig({
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
       expect.stringContaining('menuify.config.ts'),
       expect.stringContaining('import { defineConfig }'),
-      expect.any(String)
+      expect.any(String),
     )
-  })
-
-  it.each([
-    'mts',
-    'cts',
-    'ts',
-    'mjs',
-    'cjs',
-    'js',
-    'json'
-  ])('should handle %s config type', (type) => {
-    initConfig({ type: type as any })
-    expect(vi.mocked(writeFileSync).mock.calls[0][0]).toContain(`menuify.config.${type}`)
-  })
-
-  it('should throw error for invalid config type', () => {
-    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
-    const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-
-    initConfig({ type: 'invalid' as any })
-
-    expect(mockConsoleError).toHaveBeenCalledWith(
-      expect.stringContaining('Invalid config type')
-    )
-    expect(mockExit).toHaveBeenCalledWith(1)
-
-    mockExit.mockRestore()
-    mockConsoleError.mockRestore()
   })
 
   it('should not overwrite existing config file', () => {
@@ -74,29 +46,12 @@ export default defineConfig({
     initConfig()
 
     expect(mockConsoleError).toHaveBeenCalledWith(
-      expect.stringContaining('already exists')
+      expect.stringContaining('already exists'),
     )
     expect(mockExit).toHaveBeenCalledWith(1)
     expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
 
     mockExit.mockRestore()
     mockConsoleError.mockRestore()
-  })
-
-  it('should remove TypeScript types for JavaScript variants', () => {
-    initConfig({ type: 'js' })
-    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-      expect.stringContaining('menuify.config.js'),
-      expect.not.stringContaining(': string'),
-      expect.any(String)
-    )
-  })
-
-  it('should use JSON template for JSON type', () => {
-    initConfig({ type: 'json' })
-    expect(vi.mocked(copyFileSync)).toHaveBeenCalledWith(
-      expect.stringContaining('menuify.config.json'),
-      expect.stringContaining('menuify.config.json')
-    )
   })
 })

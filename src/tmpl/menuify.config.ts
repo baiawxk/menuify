@@ -1,26 +1,86 @@
 import { defineConfig } from 'menuify'
 
 export default defineConfig({
-  debug: false,
   menus: [
     {
-      name: 'Build Project',
-      type: 'command',
-      task: 'npm run build',
-      description: 'Build the project',
+      name: '测试环境变量',
+      type: 'execa',
+      task: 'echo "NODE_ENV: {NODE_ENV}"',
     },
     {
-      name: 'Start Dev Server',
-      type: 'command',
-      task: 'npm run dev',
-      description: 'Start development server',
+      name: 'test listr2',
+      type: 'listr2',
+      tasks: [{
+        title: '子任务1',
+        task: async (ctx, task) => {
+          console.log({ ctx })
+          task.title = '执行子任务1'
+        },
+      }, {
+        title: '子任务2',
+        task: async (ctx, task) => {
+          task.title = '执行子任务2'
+        },
+      }],
+      inputs: [
+        {
+          name: 'NAME',
+          message: '请输入姓名',
+          type: 'input',
+        },
+        {
+          name: 'AGE',
+          message: '请输入年龄',
+          type: 'input',
+          default: '18',
+        },
+      ],
     },
     {
-      name: 'Run Tests',
-      type: 'command',
-      task: ['npm test', 'npm run coverage'],
-      description: 'Run tests with coverage',
-      confirmMsg: 'Run all tests?',
+      name: '测试用户输入',
+      type: 'execa',
+      task: 'echo "Name: {NAME}, Age: {AGE}"',
+      inputs: [
+        {
+          name: 'NAME',
+          message: '请输入姓名',
+          type: 'input',
+        },
+        {
+          name: 'AGE',
+          message: '请输入年龄',
+          type: 'input',
+          default: '18',
+        },
+      ],
+    },
+    {
+      name: '测试组合变量',
+      type: 'execa',
+      task: 'echo "系统: {OS_TYPE}, 用户: {USER_NAME}"',
+      inputs: [
+        {
+          name: 'USER_NAME',
+          message: '请输入用户名',
+          type: 'input',
+        },
+      ],
+    },
+    {
+      name: '测试并行任务',
+      type: 'concurrently',
+      task: [
+        { command: 'echo "Task1: {TASK_NAME}"' },
+        { command: 'echo "Task2: {USER_NAME}"' },
+      ],
+      inputs: [
+        {
+          name: 'TASK_NAME',
+          message: '请输入任务名称',
+          type: 'input',
+          default: 'test-task',
+        },
+      ],
     },
   ],
 })

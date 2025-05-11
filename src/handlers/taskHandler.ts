@@ -29,7 +29,7 @@ function getEnvVariables(): Variables {
  * 执行静态任务
  */
 async function executeExecaTask(menu: ExecaMenu, variables: Variables): Promise<void> {
-  const resolvedTask = transformString(menu.task, variables)
+  const resolvedTask = transformString(menu.shell, variables)
   if (isDebug) {
     console.log('[DEBUG] 执行任务:', resolvedTask)
   }
@@ -73,7 +73,7 @@ export async function executeMenuItem(menu: MenuItem): Promise<void> {
         break
 
       case 'open':
-        await open(transformString(menu.task, variables), menu.options)
+        await open(transformString(menu.target, variables), menu.options)
         break
 
       case 'concurrently': {

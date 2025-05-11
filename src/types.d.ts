@@ -26,7 +26,7 @@ interface InputAble {
 /** Execa命令执行菜单配置 */
 export interface ExecaMenu extends BaseMenu, InputAble {
   type: 'execa'
-  task: string
+  shell: string
   options?: {
     cwd?: string
   }
@@ -35,7 +35,7 @@ export interface ExecaMenu extends BaseMenu, InputAble {
 /** Open链接菜单配置 */
 export interface OpenMenu extends BaseMenu, InputAble {
   type: 'open'
-  task: string
+  target: string
   options?: import('open').Options
 }
 

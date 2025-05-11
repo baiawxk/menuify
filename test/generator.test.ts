@@ -1,6 +1,5 @@
-import { mkdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { genShell } from '../src/generator'
 

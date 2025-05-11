@@ -1,5 +1,5 @@
 import type { CliConfig, MenuItem } from './types'
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -41,7 +41,11 @@ async function findMenuBy(config: CliConfig, name?: string) {
 }
 
 export async function searchMenu(config: CliConfig, { message } = { message: 'Select a menu to run' }) {
-  const menus = getMenu(config)
+  const typeOrder: MenuItem['type'][] = ['execa', 'open', 'function', 'concurrently', 'listr2']
+  const menus = getMenu(config).sort((a, b) => {
+    return typeOrder.indexOf(a.value.type) - typeOrder.indexOf(b.value.type)
+  })
+
   return await search<MenuItem>({
     message,
     pageSize: 15,
@@ -81,9 +85,9 @@ export async function resolveConfig(file?: string) {
     sources: file
       ? [{ files: file }]
       : [{
-        files: 'menuify.config',
-        extensions: ['ts', 'js', 'json'],
-      }],
+          files: 'menuify.config',
+          extensions: ['ts', 'js', 'json'],
+        }],
   })
 
   const { config, sources } = result
@@ -104,41 +108,18 @@ function getMenu(config: CliConfig) {
   return config.menus?.map((m) => {
     const { name } = m
     return {
-      name,
+      name: formatMenuName(name, m.type),
       value: m,
     }
   }) || []
 }
 
-export interface InitCfgOpt {
-  type?: 'mts' | 'cts' | 'ts' | 'mjs' | 'cjs' | 'js' | 'json'
-}
-
-export function initConfig(options: InitCfgOpt = {}): void {
+export function initConfig(): void {
   const currentFolder = dirname(fileURLToPath(import.meta.url))
   const tmplDir = resolve(currentFolder, './tmpl')
-  const type = options.type || 'ts'
 
-  // Map file extensions to base template types
-  const templateMap: Record<string, string> = {
-    mts: 'ts',
-    cts: 'ts',
-    ts: 'ts',
-    mjs: 'mjs',
-    cjs: 'cjs',
-    js: 'mjs', // Use ESM by default for .js
-    json: 'json',
-  }
-
-  // Validate config type
-  if (!Object.keys(templateMap).includes(type)) {
-    console.error(`Invalid config type. Supported types: ${Object.keys(templateMap).join(', ')}`)
-    process.exit(1)
-  }
-
-  const configFileName = `menuify.config.${type}`
-  const baseTemplate = templateMap[type]
-  const source = resolve(tmplDir, `menuify.config.${baseTemplate}`)
+  const configFileName = `menuify.config.ts`
+  const source = resolve(tmplDir, configFileName)
   const target = resolve(process.cwd(), configFileName)
 
   // Don't overwrite existing config
@@ -147,27 +128,29 @@ export function initConfig(options: InitCfgOpt = {}): void {
     process.exit(1)
   }
 
-  // For non-JSON types, we need to adapt the module syntax
-  if (type !== 'json') {
-    let content = readFileSync(source, 'utf-8')
-
-    // Handle TypeScript variants
-    if (['mts', 'cts', 'ts'].includes(type)) {
-      // Template is already in TypeScript format
-      writeFileSync(target, content)
-    }
-    // Handle JavaScript variants
-    else {
-      // Remove TypeScript-specific syntax if present
-      content = content.replace(/: \w+(?=,|\s|$)/g, '')
-      writeFileSync(target, content)
-    }
-  }
-  else {
-    // For JSON, use the JSON template directly
-    const jsonTemplate = resolve(tmplDir, 'menuify.config.json')
-    copyFileSync(jsonTemplate, target)
-  }
+  copyFileSync(source, target)
 
   console.log(`Sample Config Created: ${target}`)
+}
+
+function formatMenuName(name: string, type: MenuItem['type']): string {
+  const icon = getMenuTypeIcon(type)
+  return `${icon} ${name}`
+}
+
+function getMenuTypeIcon(type: MenuItem['type']): string {
+  switch (type) {
+    case 'execa':
+      return '🟩'
+    case 'open':
+      return '🟧'
+    case 'function':
+      return '🟪'
+    case 'concurrently':
+      return '🟦'
+    case 'listr2':
+      return '🟨'
+    default:
+      return ''
+  }
 }

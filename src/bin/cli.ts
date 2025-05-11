@@ -40,9 +40,8 @@ function setupCli(): void {
     })
 
   cli.command('init', 'init config file')
-    .option('-t, --type <type>', 'config file type (json|ts|js), ts is default')
-    .action(({ type }) => {
-      initConfig({ type })
+    .action(() => {
+      initConfig()
     })
 
   cli.command('edit', 'edit config file')

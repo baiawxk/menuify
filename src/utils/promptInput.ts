@@ -1,5 +1,5 @@
-import { input, confirm, select, checkbox } from '@inquirer/prompts'
 import type { TaskInput } from '../types'
+import { input, select } from '@inquirer/prompts'
 
 export async function promptInput(taskInput: TaskInput): Promise<string | undefined> {
   const { type = 'input', message, name, choices = [] } = taskInput
@@ -14,8 +14,8 @@ export async function promptInput(taskInput: TaskInput): Promise<string | undefi
           message: prompt,
           choices: choices.map(choice => ({
             value: choice,
-            label: choice
-          }))
+            label: choice,
+          })),
         })
       default:
         throw new Error(`不支持的输入类型: ${type}`)

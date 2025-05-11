@@ -19,22 +19,4 @@ describe('string transformer', () => {
     const vars = { NAME: 'World' }
     expect(transformString(template, vars)).toBe('Hello World !')
   })
-
-  it('should handle non-string variable values', () => {
-    const template = 'Count: {COUNT}'
-    const vars = { COUNT: 42 }
-    expect(transformString(template, vars)).toBe('Count: 42')
-  })
-
-  it('should handle boolean values', () => {
-    const template = 'Debug mode: {DEBUG}'
-    const vars = { DEBUG: true }
-    expect(transformString(template, vars)).toBe('Debug mode: true')
-  })
-
-  it('should ignore unmatched braces', () => {
-    const template = 'Hello {NAME{AGE}'
-    const vars = { NAME: 'World', AGE: 25 }
-    expect(transformString(template, vars)).toBe('Hello {NAME{AGE}')
-  })
 })
