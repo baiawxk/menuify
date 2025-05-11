@@ -3,84 +3,91 @@ import { defineConfig } from 'menuify'
 export default defineConfig({
   menus: [
     {
-      name: '测试环境变量',
+      name: 'Test environment variables',
       type: 'execa',
       shell: 'echo "NODE_ENV: {NODE_ENV}"',
     },
     {
-      name: 'test listr2',
+      name: 'open URL with Chrome',
+      type: 'open',
+      target: 'https://www.baidu.com',
+      options: {
+        app: {
+          name: 'chrome',
+        },
+      },
+    },
+    {
+      name: 'open URL with default browser',
+      type: 'open',
+      target: 'https://www.baidu.com',
+    },
+    {
+      name: 'Test listr2',
       type: 'listr2',
+      confirmMsg: 'Execute tasks?',
+      options: {
+        concurrent: true,
+      },
       tasks: [{
-        title: '子任务1',
+        title: 'subtask 1',
         task: async (ctx, task) => {
-          console.log({ ctx })
-          task.title = '执行子任务1'
+          task.skip('Skip subtask 1')
         },
       }, {
-        title: '子任务2',
+        title: 'subtask 2',
         task: async (ctx, task) => {
-          task.title = '执行子任务2'
+          task.output = 'Executing subtask 2'
         },
       }],
+    },
+    {
+      name: 'Test Input: input',
+      type: 'execa',
+      shell: 'echo "Hi: {NAME}"',
       inputs: [
         {
           name: 'NAME',
-          message: '请输入姓名',
+          message: 'Enter your name',
           type: 'input',
-        },
-        {
-          name: 'AGE',
-          message: '请输入年龄',
-          type: 'input',
-          default: '18',
         },
       ],
     },
     {
-      name: '测试用户输入',
+      name: 'Test Input: list',
+      shell: '{cmd}',
       type: 'execa',
-      shell: 'echo "Name: {NAME}, Age: {AGE}"',
       inputs: [
         {
-          name: 'NAME',
-          message: '请输入姓名',
-          type: 'input',
-        },
-        {
-          name: 'AGE',
-          message: '请输入年龄',
-          type: 'input',
-          default: '18',
-        },
-      ],
-    },
-    {
-      name: '测试组合变量',
-      type: 'execa',
-      shell: 'echo "系统: {OS_TYPE}, 用户: {USER_NAME}"',
-      inputs: [
-        {
-          name: 'USER_NAME',
-          message: '请输入用户名',
-          type: 'input',
+          name: 'cmd',
+          type: 'list',
+          choices: [
+            'echo pnpx create vite@latest',
+            'echo pnpx create vue@latest',
+            'echo pnpx create electron-app@latest',
+            'echo pnpx create nuxt-app@latest',
+            'echo pnpx create react-app@latest',
+            'echo pnpx create next-app@latest',
+            'echo pnpx sv create',
+            'echo pnpx create-agent-chat-app@latest',
+          ],
         },
       ],
     },
     {
-      name: '测试并行任务',
+      name: 'Test concurrently',
       type: 'concurrently',
       tasks: [
-        { command: 'echo "Task1: {TASK_NAME}"' },
-        { command: 'echo "Task2: {USER_NAME}"' },
+        { command: 'echo 1', prefixColor: 'bgBlue' },
+        { command: 'echo 2', prefixColor: 'bgYellow' },
       ],
-      inputs: [
-        {
-          name: 'TASK_NAME',
-          message: '请输入任务名称',
-          type: 'input',
-          default: 'test-task',
-        },
-      ],
+    },
+    {
+      name: 'Test function type',
+      type: 'function',
+      task: async (ctx) => {
+        console.log('Executing custom function task')
+      },
     },
   ],
 })

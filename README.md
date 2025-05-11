@@ -14,11 +14,9 @@ menuify is inspired by VSCode Tasks, aiming to bring these convenient task manag
 - 😊 Friendly interactive CLI menu with fuzzy search
 - 🔧 Automatic config loading via `unconfig`
 - ⚡ Execute commands, open links, or run custom functions
-- 📝 Rich input types support (prompt, pick, confirm, multi-select)
-- 🔄 Task dependencies and execution modes
+- 📝 Rich input types support (input,list)
 - 🌍 Cross-platform environment variables support
 - 🎛️ VSCode-like task configuration experience
-- 🏗️ Advanced task system with dependencies
 
 ## 🛠️ Installation
 
@@ -39,39 +37,93 @@ menuify init
 import { defineConfig } from 'menuify'
 
 export default defineConfig({
-  env: {
-    NODE_ENV: 'development'
-  },
   menus: [
     {
-      name: 'Install Dependencies',
-      type: 'command',
-      task: 'npm install'
+      name: 'Test environment variables',
+      type: 'execa',
+      shell: 'echo "NODE_ENV: {NODE_ENV}"',
     },
     {
-      name: 'Start Dev',
-      type: 'command',
-      task: 'npm run dev'
+      name: 'open URL with Chrome',
+      type: 'open',
+      target: 'https://www.baidu.com',
+      options: {
+        app: {
+          name: 'chrome',
+        },
+      },
     },
     {
-      name: 'Open Docs',
-      type: 'link',
-      task: 'https://github.com/baiawxk/cli-menu'
+      name: 'Test listr2',
+      type: 'listr2',
+      confirmMsg: 'Execute tasks?',
+      options: {
+        concurrent: true,
+      },
+      tasks: [
+        {
+          title: 'subtask 1',
+          task: async (ctx, task) => {
+            task.skip('Skip subtask 1')
+          },
+        },
+        {
+          title: 'subtask 2',
+          task: async (ctx, task) => {
+            task.output = 'Executing subtask 2'
+          },
+        },
+      ],
     },
     {
-      name: 'Run Tests',
-      type: 'command',
-      task: 'npm test',
+      name: 'Test Input: input',
+      type: 'execa',
+      shell: 'echo "Hi: {NAME}"',
       inputs: [
         {
-          id: 'testType',
-          type: 'pickString',
-          description: 'Select test type',
-          options: ['unit', 'integration', 'e2e']
-        }
-      ]
-    }
-  ]
+          name: 'NAME',
+          message: 'Enter your name',
+          type: 'input',
+        },
+      ],
+    },
+    {
+      name: 'Test Input: list',
+      shell: '{cmd}',
+      type: 'execa',
+      inputs: [
+        {
+          name: 'cmd',
+          type: 'list',
+          choices: [
+            'echo pnpx create vite@latest',
+            'echo pnpx create vue@latest',
+            'echo pnpx create electron-app@latest',
+            'echo pnpx create nuxt-app@latest',
+            'echo pnpx create react-app@latest',
+            'echo pnpx create next-app@latest',
+            'echo pnpx sv create',
+            'echo pnpx create-agent-chat-app@latest',
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Test concurrently',
+      type: 'concurrently',
+      tasks: [
+        { command: 'echo 1', prefixColor: 'bgBlue' },
+        { command: 'echo 2', prefixColor: 'bgYellow' },
+      ],
+    },
+    {
+      name: 'Test function type',
+      type: 'function',
+      task: async (ctx) => {
+        console.log('Executing custom function task')
+      },
+    },
+  ],
 })
 ```
 
@@ -80,113 +132,97 @@ export default defineConfig({
 menuify
 ```
 
-## ⚙️ Advanced Configuration
-
-### Complete Example
-```typescript
-import { defineConfig } from 'menuify'
-
-export default defineConfig({
-  // Environment variables configuration
-  env: {
-    // Environment options
-    NODE_ENV: 'development'
-  },
-  menus: [
-    // Command with user inputs
-    {
-      name: 'Build Project',
-      type: 'command',
-      task: 'npm run build --mode {env}',
-      inputs: [
-        {
-          id: 'env',
-          type: 'pickString',
-          description: 'Select environment',
-          options: ['dev', 'staging', 'prod']
-        },
-        {
-          id: 'optimize',
-          type: 'confirm',
-          description: 'Enable optimization?'
-        }
-      ],
-      dependsOn: ['Install'],
-      confirmMsg: 'Start building?',
-    },
-    // Multiple commands
-    {
-      name: 'Setup Project',
-      type: 'command',
-      task: [
-        'git init',
-        'npm install',
-        'npm run prepare'
-      ],
-    },
-    // Custom function
-    {
-      name: 'Custom Task',
-      type: 'function',
-      task: async (ctx) => {
-        // Custom implementation using context
-        console.log('Task inputs:', ctx.inputs)
-        console.log('Global env:', ctx.env)
-        console.log('Menu env:', ctx.menuEnv)
-      }
-    }
-  ]
-})
-```
-
 ### Menu Item Types
 
-#### Command Menu
+#### Execa Menu
 ```typescript
 {
-  name: string;              // Display name
-  type: 'command';          // Menu type
-  task: string | string[]; // Single command or command array
-  options?: {
-    cwd?: string;          // Working directory
-  }
+  name: 'Execa Example',
+  type: 'execa',
+  shell: 'echo "Hello, World!"',
+  options: {
+    cwd: '/path/to/working/directory';
+  };
 }
 ```
 
-#### Link Menu
+#### Open Menu
 ```typescript
 {
-  name: string // Display name
-  type: 'link' // Menu type
-  task: string // URL or file path
+  name: 'Open Example',
+  type: 'open',
+  target: 'https://example.com',
+  options: {
+    app: {
+      name: 'chrome';
+    };
+  };
+}
+```
+
+#### Listr2 Menu
+```typescript
+{
+  name: 'Listr2 Example',
+  type: 'listr2',
+  confirmMsg: 'Execute tasks?',
+  options: {
+    concurrent: true;
+  },
+  tasks: [
+    {
+      title: 'Task 1',
+      task: async (ctx, task) => {
+        task.skip('Skipping Task 1');
+      };
+    },
+    {
+      title: 'Task 2',
+      task: async (ctx, task) => {
+        task.output = 'Executing Task 2';
+      };
+    };
+  ];
 }
 ```
 
 #### Function Menu
 ```typescript
 {
-  name: string // Display name
-  type: 'function' // Menu type
-  task: (ctx: ExecutionContext) => Promise<void> // Custom function with context
+  name: 'Function Example',
+  type: 'function',
+  task: async (ctx) => {
+    console.log('Executing custom function task');
+  };
+}
+```
+
+#### Concurrently Menu
+```typescript
+{
+  name: 'Concurrently Example',
+  type: 'concurrently',
+  tasks: [
+    { command: 'echo Task 1', prefixColor: 'bgBlue' },
+    { command: 'echo Task 2', prefixColor: 'bgYellow' },
+  ];
 }
 ```
 
 ### User Inputs
 
 Supported input types:
-- `promptString`: Text input
-- `pickString`: Single selection
+- `input`: Text input
+- `list`: Single selection from a list
 - `confirm`: Yes/No confirmation
-- `multiSelect`: Multiple selection
 
 ```typescript
 interface TaskInput {
-  id: string // Input identifier
-  type: TaskInputType // Input type
-  description?: string // Input description
-  default?: string // Default value
-  options?: string[] // Options for pick/multiSelect
-  joinSymbol?: string // Join symbol for multiSelect
+  name: string // Input identifier
+  type: 'input' | 'list' | 'confirm' // Input type
+  message?: string // Input prompt message
+  default?: string // Default value for input
+  choices?: string[] // Options for list type
 }
 ```
 
@@ -195,9 +231,9 @@ interface TaskInput {
 ```typescript
 {
   name: 'Deploy',
-  type: 'command',
-  task: 'npm run deploy',
-  dependsOn: ['Build', 'Test'], // Tasks to run before
+  type: 'execa',
+  shell: 'npm run deploy',
+  dependsOn: ['Build', 'Test'],
 }
 ```
 
@@ -214,7 +250,6 @@ Commands:
     -c, --config     Config file to use
 
   init                Initialize config file
-    -t, --type       Config file type (json|ts|js), ts is default
 
   edit                Edit config file
     -c, --config     Config file to edit
@@ -254,23 +289,19 @@ Options:
 
 ### 🌱 Environment Variables Best Practices
 
-1. **Cross-platform variables**:
-```typescript
-env: {
-  // Works consistently across all platforms
-  NODE_ENV: 'development',
-  // Avoid platform-specific paths
-  PATH: '/usr/local/bin' // Platform-dependent, not recommended
-}
+1. **Using .env files**:
+Environment variables are now injected via `.env` files. Ensure you create a `.env` file in your project root with the required variables:
+
+```
+NODE_ENV=development
+PORT=3000
 ```
 
-2. **Using variables in commands**:
+2. **Accessing variables in commands**:
 ```typescript
 {
   name: 'Start Server',
-  type: 'command',
-  // Recommended cross-platform variable syntax
-  task: 'node server.js --env=$NODE_ENV --port=$PORT'
+  shell: 'node server.js --env={NODE_ENV} --port={PORT}'
 }
 ```
 
