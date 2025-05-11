@@ -1,28 +1,27 @@
 import type { TaskInput } from '../types'
-import { input, select } from '@inquirer/prompts'
+import { confirm, editor, expand, input, number, password, rawlist, search, select } from '@inquirer/prompts'
 
-export async function promptInput(taskInput: TaskInput): Promise<string | undefined> {
-  const { type = 'input', message, name, choices = [] } = taskInput
-  const prompt = message || `请输入 ${name}`
-
-  try {
-    switch (type) {
-      case 'input':
-        return await input({ message: prompt, default: taskInput.default as string })
-      case 'list':
-        return await select({
-          message: prompt,
-          choices: choices.map(choice => ({
-            value: choice,
-            label: choice,
-          })),
-        })
-      default:
-        throw new Error(`不支持的输入类型: ${type}`)
-    }
-  }
-  catch (error) {
-    console.error(`输入处理错误:`, error)
-    return taskInput.default
+export async function promptInput<T extends TaskInput>(taskInput: T): Promise<any> {
+  switch (taskInput.type) {
+    case 'input':
+      return await input(taskInput)
+    case 'select':
+      return await select(taskInput)
+    case 'confirm':
+      return await confirm(taskInput)
+    case 'rawlist':
+      return await rawlist(taskInput)
+    case 'editor':
+      return await editor(taskInput)
+    case 'expand':
+      return await expand(taskInput)
+    case 'number':
+      return await number(taskInput)
+    case 'password':
+      return await password(taskInput)
+    case 'search':
+      return await search(taskInput)
+    default:
+      throw new Error(`不支持的输入类型`)
   }
 }

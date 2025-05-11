@@ -2,6 +2,8 @@
  * 菜单和任务相关的所有类型定义
  */
 
+import type { confirm, editor, expand, input, number, password, rawlist, search, select } from '@inquirer/prompts'
+
 /** 基础菜单配置 */
 interface BaseMenu {
   name: string
@@ -9,14 +11,30 @@ interface BaseMenu {
 }
 
 /** 用户输入配置 */
-export interface TaskInput {
+
+export interface BaseInput {
   name: string
-  message?: string
-  type?: 'input' | 'list'
-  choices?: string[]
-  default?: string
-  validate?: (input: any) => boolean | string | Promise<boolean | string>
 }
+
+export type ConfirmInput = BaseInput & Parameters<typeof confirm>[0] & { type: 'confirm' }
+
+export type SearchInput = BaseInput & Parameters<typeof search>[0] & { type: 'search' }
+
+export type NumberInput = BaseInput & Parameters<typeof number>[0] & { type: 'number' }
+
+export type RawlistInput = BaseInput & Parameters<typeof rawlist>[0] & { type: 'rawlist' }
+
+export type SelectInput = BaseInput & Parameters<typeof select>[0] & { type: 'select' }
+
+export type PasswordInput = BaseInput & Parameters<typeof password>[0] & { type: 'password' }
+
+export type ExpandInput = BaseInput & Parameters<typeof expand>[0] & { type: 'expand' }
+
+export type EditorInput = BaseInput & Parameters<typeof editor>[0] & { type: 'editor' }
+
+export type PromptInput = BaseInput & Parameters<typeof input>[0] & { type: 'input' }
+
+export type TaskInput = ConfirmInput | SearchInput | NumberInput | RawlistInput | SelectInput | PasswordInput | ExpandInput | EditorInput | PromptInput
 
 /** 静态菜单项基础配置 */
 interface InputAble {
@@ -68,7 +86,7 @@ export interface CliConfig {
 }
 
 /** 变量集合类型 */
-export type Variables = Record<string, string>
+export type Variables = Record<string, any>
 
 /** 简单的字符串转换函数类型 */
 export type StringTransformer = (input: string, vars: Variables) => string

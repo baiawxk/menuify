@@ -213,18 +213,14 @@ menuify
 
 Supported input types:
 - `input`: Text input
-- `list`: Single selection from a list
+- `password`: Password input with mask
 - `confirm`: Yes/No confirmation
-
-```typescript
-interface TaskInput {
-  name: string // Input identifier
-  type: 'input' | 'list' | 'confirm' // Input type
-  message?: string // Input prompt message
-  default?: string // Default value for input
-  choices?: string[] // Options for list type
-}
-```
+- `expand`: Selection with hotkey
+- `number`: Numeric input
+- `rawlist`: Numbered list selection
+- `search`: Searchable list selection
+- `editor`: Multi-line text editor
+- `select`: Select from a list of options
 
 ## 🛠️ CLI Options
 

@@ -48,8 +48,8 @@ export default defineConfig({
       inputs: [
         {
           name: 'NAME',
-          message: 'Enter your name',
           type: 'input',
+          message: 'Enter your name',
         },
       ],
     },
@@ -60,7 +60,8 @@ export default defineConfig({
       inputs: [
         {
           name: 'cmd',
-          type: 'list',
+          type: 'rawlist',
+          message: 'Select a template',
           choices: [
             'echo pnpx create vite@latest',
             'echo pnpx create vue@latest',
