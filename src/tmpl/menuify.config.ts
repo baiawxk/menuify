@@ -5,7 +5,7 @@ export default defineConfig({
     {
       name: '测试环境变量',
       type: 'execa',
-      task: 'echo "NODE_ENV: {NODE_ENV}"',
+      shell: 'echo "NODE_ENV: {NODE_ENV}"',
     },
     {
       name: 'test listr2',
@@ -39,7 +39,7 @@ export default defineConfig({
     {
       name: '测试用户输入',
       type: 'execa',
-      task: 'echo "Name: {NAME}, Age: {AGE}"',
+      shell: 'echo "Name: {NAME}, Age: {AGE}"',
       inputs: [
         {
           name: 'NAME',
@@ -57,7 +57,7 @@ export default defineConfig({
     {
       name: '测试组合变量',
       type: 'execa',
-      task: 'echo "系统: {OS_TYPE}, 用户: {USER_NAME}"',
+      shell: 'echo "系统: {OS_TYPE}, 用户: {USER_NAME}"',
       inputs: [
         {
           name: 'USER_NAME',
@@ -69,7 +69,7 @@ export default defineConfig({
     {
       name: '测试并行任务',
       type: 'concurrently',
-      task: [
+      tasks: [
         { command: 'echo "Task1: {TASK_NAME}"' },
         { command: 'echo "Task2: {USER_NAME}"' },
       ],
