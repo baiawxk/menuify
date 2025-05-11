@@ -42,7 +42,7 @@ export interface OpenMenu extends BaseMenu, InputAble {
 /** Concurrently并行任务菜单配置 */
 export interface ConcurrentlyMenu extends BaseMenu, InputAble {
   type: 'concurrently'
-  task: string[] | import('concurrently').ConcurrentlyCommandInput[]
+  tasks: import('concurrently').ConcurrentlyCommandInput[]
   options?: import('concurrently').ConcurrentlyOptions
 }
 

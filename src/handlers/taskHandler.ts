@@ -77,11 +77,11 @@ export async function executeMenuItem(menu: MenuItem): Promise<void> {
         break
 
       case 'concurrently': {
-        const tasks = Array.isArray(menu.task)
-          ? menu.task.map(cmd => typeof cmd === 'string'
+        const tasks = Array.isArray(menu.tasks)
+          ? menu.tasks.map(cmd => typeof cmd === 'string'
               ? { command: transformString(cmd, variables) }
               : { ...cmd, command: transformString(cmd.command, variables) })
-          : menu.task
+          : menu.tasks
         await concurrently(tasks, menu.options)
         break
       }
